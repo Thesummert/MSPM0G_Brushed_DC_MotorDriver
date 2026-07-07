@@ -18,6 +18,16 @@ static _Bool SetPWM_Mode(EF_BSP_TimerPWM_t *self, EF_TimerPWMMode_e mode);
 static _Bool StartPWM(EF_BSP_TimerPWM_t *self);
 static _Bool StopPWM(EF_BSP_TimerPWM_t *self);
 
+/**
+ * @brief       初始化定时器基类
+ * @param[in]   self              定时器对象指针
+ * @param[in]   tim               定时器寄存器基地址
+ * @param[in]   clock_source_freq 时钟源频率(Hz)
+ * @param[in]   max_prescaler     最大预分频系数
+ * @param[in]   max_auto_reload_num 最大自动重装载值
+ * @retval      true              初始化成功
+ * @retval      false             初始化失败(空指针)
+ */
 _Bool EF_BSP_TimerBase_Init(EF_BSP_TimerBase_t *self, GPTIMER_Regs *tim,
                             uint32_t clock_source_freq, uint32_t max_prescaler,
                             uint32_t max_auto_reload_num) {
@@ -40,8 +50,13 @@ _Bool EF_BSP_TimerBase_Init(EF_BSP_TimerBase_t *self, GPTIMER_Regs *tim,
   return true;
 }
 
+/**
+ * @brief       启动定时器计数
+ * @param[in]   self  定时器对象指针
+ * @retval      true  启动成功
+ * @retval      false 启动失败(空指针或未初始化)
+ */
 static _Bool StartCounter(EF_BSP_TimerBase_t *self) {
-  /*开始计数*/
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in tim start \r\n");
     return false;
@@ -54,8 +69,13 @@ static _Bool StartCounter(EF_BSP_TimerBase_t *self) {
   return true;
 }
 
+/**
+ * @brief       停止定时器计数
+ * @param[in]   self  定时器对象指针
+ * @retval      true  停止成功
+ * @retval      false 停止失败(空指针或未初始化)
+ */
 static _Bool StopCounter(EF_BSP_TimerBase_t *self) {
-  /*关闭计数*/
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in tim stop \r\n");
     return false;
@@ -68,9 +88,15 @@ static _Bool StopCounter(EF_BSP_TimerBase_t *self) {
   return true;
 }
 
+/**
+ * @brief       设定定时器计数模式
+ * @param[in]   self  定时器对象指针
+ * @param[in]   mode  计数模式(单次/周期/上下等)
+ * @retval      true  设定成功
+ * @retval      false 设定失败(空指针或未初始化)
+ */
 static _Bool setCounterMode(EF_BSP_TimerBase_t *self,
                             EF_TimerCounterMode_e mode) {
-  /*设定计数器模式*/
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in tim start \r\n");
     return false;
@@ -115,6 +141,14 @@ static _Bool setCounterMode(EF_BSP_TimerBase_t *self,
 }
 
 /*===========PWM===========*/
+/**
+ * @brief       初始化PWM控制器
+ * @param[in]   self         PWM对象指针
+ * @param[in]   etim         定时器基类对象指针(需先初始化)
+ * @param[in]   max_channel  最大通道数
+ * @retval      true         初始化成功
+ * @retval      false        初始化失败(空指针或定时器未初始化)
+ */
 _Bool EF_BSP_TimerPWM_Init(EF_BSP_TimerPWM_t *self, EF_BSP_TimerBase_t *etim,
                            uint8_t max_channel) {
   if (self == NULL || etim == NULL) {
@@ -146,6 +180,14 @@ _Bool EF_BSP_TimerPWM_Init(EF_BSP_TimerPWM_t *self, EF_BSP_TimerBase_t *etim,
   return true;
 }
 
+/**
+ * @brief       设置PWM通道比较值(整数方式)
+ * @param[in]   self        PWM对象指针
+ * @param[in]   channel_id  通道ID(从0开始)
+ * @param[in]   compare     比较值(占空比 = compare / max_auto_reload_num)
+ * @retval      true        设置成功
+ * @retval      false       设置失败(空指针或未初始化)
+ */
 static _Bool SetPWM(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
                     uint32_t compare) {
   if (self == NULL) {
@@ -166,6 +208,14 @@ static _Bool SetPWM(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
   return true;
 }
 
+/**
+ * @brief       设置PWM通道占空比(浮点方式)
+ * @param[in]   self        PWM对象指针
+ * @param[in]   channel_id  通道ID(从0开始)
+ * @param[in]   radio       占空比(0.0 ~ 1.0, 超出范围自动钳位)
+ * @retval      true        设置成功
+ * @retval      false       设置失败(空指针或未初始化)
+ */
 static _Bool SetPWM_Float(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
                           float radio) {
 
@@ -189,6 +239,12 @@ static _Bool SetPWM_Float(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
   return true;
 }
 
+/**
+ * @brief       启动PWM输出
+ * @param[in]   self  PWM对象指针
+ * @retval      true  启动成功
+ * @retval      false 启动失败(空指针或未初始化)
+ */
 static _Bool StartPWM(EF_BSP_TimerPWM_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in pwm start \r\n");
@@ -202,6 +258,12 @@ static _Bool StartPWM(EF_BSP_TimerPWM_t *self) {
   return true;
 }
 
+/**
+ * @brief       停止PWM输出
+ * @param[in]   self  PWM对象指针
+ * @retval      true  停止成功
+ * @retval      false 停止失败(空指针或未初始化)
+ */
 static _Bool StopPWM(EF_BSP_TimerPWM_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in pwm stop \r\n");
@@ -215,6 +277,13 @@ static _Bool StopPWM(EF_BSP_TimerPWM_t *self) {
   return true;
 }
 
+/**
+ * @brief       设置PWM模式(边缘对齐/中心对齐)
+ * @param[in]   self  PWM对象指针
+ * @param[in]   mode  PWM模式(向上计数/向下计数/中心对齐)
+ * @retval      true  设置成功
+ * @retval      false 设置失败(空指针、未初始化或未知模式)
+ */
 static _Bool SetPWM_Mode(EF_BSP_TimerPWM_t *self, EF_TimerPWMMode_e mode) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in pwm set mode \r\n");

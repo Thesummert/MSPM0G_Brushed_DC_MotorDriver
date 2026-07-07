@@ -475,7 +475,7 @@ static const DL_MCAN_InitParams gMCAN0InitParams= {
 
 /* Initialize MCAN Init parameters.    */
     .fdMode            = true,
-    .brsEnable         = true,
+    .brsEnable         = false,
     .txpEnable         = false,
     .efbi              = false,
     .pxhddisable       = false,
@@ -506,10 +506,10 @@ static const DL_MCAN_MsgRAMConfigParams gMCAN0MsgRAMConfigParams ={
     .txStartAddr          = MCAN0_INST_MCAN_TX_BUFF_START_ADDR,
     /* Number of Dedicated Transmit Buffers. */
     .txBufNum             = MCAN0_INST_MCAN_TX_BUFF_SIZE,
-    .txFIFOSize           = 0,
+    .txFIFOSize           = 6,
     /* Tx Buffer Element Size. */
     .txBufMode            = 0,
-    .txBufElemSize        = DL_MCAN_ELEM_SIZE_64BYTES,
+    .txBufElemSize        = DL_MCAN_ELEM_SIZE_8BYTES,
     /* Tx Event FIFO Start Address. */
     .txEventFIFOStartAddr = MCAN0_INST_MCAN_TX_EVENT_START_ADDR,
     /* Event FIFO Size. */
@@ -534,18 +534,18 @@ static const DL_MCAN_MsgRAMConfigParams gMCAN0MsgRAMConfigParams ={
     /* Rx Buffer Start Address. */
     .rxBufStartAddr       = MCAN0_INST_MCAN_RX_BUFF_START_ADDR,
     /* Rx Buffer Element Size. */
-    .rxBufElemSize        = DL_MCAN_ELEM_SIZE_64BYTES,
+    .rxBufElemSize        = DL_MCAN_ELEM_SIZE_8BYTES,
     /* Rx FIFO0 Element Size. */
-    .rxFIFO0ElemSize      = DL_MCAN_ELEM_SIZE_64BYTES,
+    .rxFIFO0ElemSize      = DL_MCAN_ELEM_SIZE_8BYTES,
     /* Rx FIFO1 Element Size. */
-    .rxFIFO1ElemSize      = DL_MCAN_ELEM_SIZE_64BYTES,
+    .rxFIFO1ElemSize      = DL_MCAN_ELEM_SIZE_8BYTES,
 };
 
 
 
 static const DL_MCAN_BitTimingParams   gMCAN0BitTimes = {
     /* Arbitration Baud Rate Pre-scaler. */
-    .nomRatePrescalar   = 1,
+    .nomRatePrescalar   = 0,
     /* Arbitration Time segment before sample point. */
     .nomTimeSeg1        = 33,
     /* Arbitration Time segment after sample point. */
@@ -553,13 +553,13 @@ static const DL_MCAN_BitTimingParams   gMCAN0BitTimes = {
     /* Arbitration (Re)Synchronization Jump Width Range. */
     .nomSynchJumpWidth  = 4,
     /* Data Baud Rate Pre-scaler. */
-    .dataRatePrescalar  = 1,
+    .dataRatePrescalar  = 0,
     /* Data Time segment before sample point. */
-    .dataTimeSeg1       = 16,
+    .dataTimeSeg1       = 0,
     /* Data Time segment after sample point. */
-    .dataTimeSeg2       = 1,
+    .dataTimeSeg2       = 0,
     /* Data (Re)Synchronization Jump Width.   */
-    .dataSynchJumpWidth = 1,
+    .dataSynchJumpWidth = 0,
 };
 
 
@@ -604,6 +604,10 @@ SYSCONFIG_WEAK void SYSCFG_DL_MCAN0_init(void) {
     DL_MCAN_setOpMode(MCAN0_INST, DL_MCAN_OPERATION_MODE_NORMAL);
 
     while (DL_MCAN_OPERATION_MODE_NORMAL != DL_MCAN_getOpMode(MCAN0_INST));
+
+    /* Enable MCAN mopdule Interrupts */
+    DL_MCAN_enableIntr(MCAN0_INST, MCAN0_INST_MCAN_INTERRUPTS, 1U);
+
 
 
 }

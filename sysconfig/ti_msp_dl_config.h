@@ -196,6 +196,8 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define GPIO_MCAN0_CAN_RX_PIN                                     DL_GPIO_PIN_27
 #define GPIO_MCAN0_IOMUX_CAN_RX                                  (IOMUX_PINCM60)
 #define GPIO_MCAN0_IOMUX_CAN_RX_FUNC               IOMUX_PINCM60_PF_CANFD0_CANRX
+#define MCAN0_INST_IRQHandler                                 CANFD0_IRQHandler
+#define MCAN0_INST_INT_IRQN                                     CANFD0_INT_IRQn
 
 
 /* Defines for MCAN0 MCAN RAM configuration */
@@ -212,8 +214,10 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define MCAN0_INST_MCAN_EXT_ID_AND_MASK            (0x1FFFFFFFU)
 #define MCAN0_INST_MCAN_RX_BUFF_START_ADDR         (208)
 #define MCAN0_INST_MCAN_FIFO_0_START_ADDR          (172)
-#define MCAN0_INST_MCAN_FIFO_0_NUM                 (3)
+#define MCAN0_INST_MCAN_FIFO_0_NUM                 (8)
 
+#define MCAN0_INST_MCAN_INTERRUPTS (DL_MCAN_INTERRUPT_RF0N | \
+						DL_MCAN_INTERRUPT_RF1N)
 
 
 
