@@ -34,9 +34,17 @@ set(SYSCONFIG_SRC
 set(SYSCONFIG_INC
     ./sysconfig
 )
+
+# Config
 set(Config_Src
 ./User/Config/Src/mcu_device.c
 )
+
+set(BSP_Src 
+    ./User/BSP/Src/bsp_time.c
+    ./User/BSP/Src/bsp_mspm0g_tim_base.c
+)
+
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -48,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     ${SYSCONFIG_SRC}
     ${Config_Src}
+    ${BSP_Src}
 )
 
 # Add include paths
@@ -55,6 +64,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${SYSCONFIG_INC}
     ./User/Config/Inc
+    ./User/BSP/Inc
 )
 
 # Add project symbols (macros)
