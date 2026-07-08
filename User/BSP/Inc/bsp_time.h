@@ -43,6 +43,9 @@ typedef struct EF_BSP_TimerBase_t {
   _Bool (*setCounterMode)(struct EF_BSP_TimerBase_t *self,
                           EF_TimerCounterMode_e mode);
 
+  _Bool (*setCounterPrescaler)(struct EF_BSP_TimerBase_t *self,
+                               uint32_t prescaler);
+
   struct {
     GPTIMER_Regs *tim;
     DL_TIMER_TIMER_MODE mode;
@@ -51,6 +54,7 @@ typedef struct EF_BSP_TimerBase_t {
 
 } EF_BSP_TimerBase_t;
 
+/*Easyframe PWM控制结构体*/
 typedef struct EF_BSP_TimerPWM_t {
   _Bool is_inited;
   EF_BSP_TimerBase_t *etim; // EF定时器句柄
@@ -74,12 +78,26 @@ typedef struct EF_BSP_TimerPWM_t {
   } mspm0g;
 } EF_BSP_TimerPWM_t;
 
+typedef struct  EF_BSP_TimerQEI_t{
+  _Bool is_inited;
+  EF_BSP_TimerBase_t *etim; // EF定时器句柄
+  uint32_t base_load;       // 编码器起始值
+  int32_t delta;            // 与编码器起始值的差
+
+  // 函数指针
+  _Bool (*setBaseLoad)(struct EF_BSP_TimerQEI_t *self, uint32_t load);
+  _Bool (*getDelta)(struct EF_BSP_TimerQEI_t *self, int32_t *delta);
+
+} EF_BSP_TimerQEI_t;
+
 _Bool EF_BSP_TimerBase_Init(EF_BSP_TimerBase_t *self, GPTIMER_Regs *tim,
                             uint32_t clock_source_freq, uint32_t max_prescaler,
                             uint32_t max_auto_reload_num);
 
 _Bool EF_BSP_TimerPWM_Init(EF_BSP_TimerPWM_t *self, EF_BSP_TimerBase_t *etim,
                            uint8_t max_channel);
+_Bool EF_BSP_TimerQEI_Init(EF_BSP_TimerQEI_t *self, EF_BSP_TimerBase_t *etim);
+
 
 #ifdef __cplusplus
 }

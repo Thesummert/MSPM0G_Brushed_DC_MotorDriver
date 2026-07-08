@@ -10,6 +10,8 @@ static _Bool StartCounter(EF_BSP_TimerBase_t *self);
 static _Bool StopCounter(EF_BSP_TimerBase_t *self);
 static _Bool setCounterMode(EF_BSP_TimerBase_t *self,
                             EF_TimerCounterMode_e mode);
+static _Bool setCounterPrescaler(EF_BSP_TimerBase_t *self, uint32_t prescaler);
+
 static _Bool SetPWM_Float(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
                           float radio);
 static _Bool SetPWM(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
@@ -17,6 +19,9 @@ static _Bool SetPWM(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
 static _Bool SetPWM_Mode(EF_BSP_TimerPWM_t *self, EF_TimerPWMMode_e mode);
 static _Bool StartPWM(EF_BSP_TimerPWM_t *self);
 static _Bool StopPWM(EF_BSP_TimerPWM_t *self);
+
+static _Bool setBaseLoad(EF_BSP_TimerQEI_t *self, uint32_t load);
+static _Bool getDelta(EF_BSP_TimerQEI_t *self, int32_t *delta);
 
 /**
  * @brief       初始化定时器基类
@@ -44,6 +49,7 @@ _Bool EF_BSP_TimerBase_Init(EF_BSP_TimerBase_t *self, GPTIMER_Regs *tim,
   self->StartCounter = StartCounter;
   self->StopCounter = StopCounter;
   self->setCounterMode = setCounterMode;
+  self->setCounterPrescaler = setCounterPrescaler;
 
   self->is_inited = true;
 
@@ -140,6 +146,34 @@ static _Bool setCounterMode(EF_BSP_TimerBase_t *self,
   return true;
 }
 
+/**
+ * @brief       设置定时器预分频系数
+ * @param[in]   self       定时器对象指针
+ * @param[in]   prescaler  预分频系数(超过最大值自动钳位)
+ * @retval      true       设置成功
+ * @retval      false      设置失败(空指针或未初始化)
+ */
+static _Bool setCounterPrescaler(EF_BSP_TimerBase_t *self, uint32_t prescaler) {
+  if (self == NULL) {
+    RTT_Print(0, "Null pointer error in tim start \r\n");
+    return false;
+  }
+  if (self->is_inited == false) {
+    return false;
+  }
+  if (prescaler > self->max_prescaler) {
+    prescaler = self->max_prescaler;
+  }
+  self->prescaler = prescaler;
+  DL_Timer_ClockConfig config;
+  // 先获取原有参数
+  DL_Timer_getClockConfig(self->mspm0g.tim, &config);
+  config.prescale = prescaler;
+  DL_Timer_setClockConfig(self->mspm0g.tim, &config);
+
+  return true;
+}
+
 /*===========PWM===========*/
 /**
  * @brief       初始化PWM控制器
@@ -165,7 +199,7 @@ _Bool EF_BSP_TimerPWM_Init(EF_BSP_TimerPWM_t *self, EF_BSP_TimerBase_t *etim,
 
   // MSPM0需要判断是否支持4channel
   if (max_channel > 2) {
-      self->mspm0g.is_support4channel = true;
+    self->mspm0g.is_support4channel = true;
   }
 
   // 初始化函数指针
@@ -311,12 +345,86 @@ static _Bool SetPWM_Mode(EF_BSP_TimerPWM_t *self, EF_TimerPWMMode_e mode) {
   }
   const DL_TimerA_PWMConfig config = {
       .period = 0,
-      .startTimer =  DL_TIMER_STOP,
+      .startTimer = DL_TIMER_STOP,
       .pwmMode = self->mspm0g.pwm_mode,
       .isTimerWithFourCC = self->mspm0g.is_support4channel,
   };
   // 设定PWM
   DL_Timer_initPWMMode(self->etim->mspm0g.tim, &config);
 
+  return true;
+}
+
+/*===========QEI===========*/
+/**
+ * @brief       初始化QEI编码器接口
+ * @param[in]   self  QEI对象指针
+ * @param[in]   etim  定时器基类对象指针(需先初始化并配置为QEI模式)
+ * @retval      true  初始化成功
+ * @retval      false 初始化失败(空指针或定时器未初始化)
+ */
+_Bool EF_BSP_TimerQEI_Init(EF_BSP_TimerQEI_t *self, EF_BSP_TimerBase_t *etim) {
+  if (self == NULL || etim == NULL) {
+    RTT_Print(0, "Null pointer error in timer qei init \r\n");
+    return false;
+  }
+  if (etim->is_inited == false) {
+    RTT_Print(0, "Need to init tim first then init qei \r\n");
+    return false;
+  }
+  memset(self, 0, sizeof(EF_BSP_TimerQEI_t));
+  // 获取默认装载值
+  self->base_load = DL_Timer_getLoadValue(self->etim->mspm0g.tim);
+
+  // 初始化函数指针
+  self->setBaseLoad = setBaseLoad;
+  self->getDelta = getDelta;
+
+  self->is_inited = true;
+
+  return true;
+}
+
+/**
+ * @brief       设置QEI编码器LOAD基准值
+ * @param[in]   self  QEI对象指针
+ * @param[in]   load  LOAD值(超过最大值自动钳位)
+ * @retval      true  设置成功
+ * @retval      false 设置失败(空指针或未初始化)
+ */
+static _Bool setBaseLoad(EF_BSP_TimerQEI_t *self, uint32_t load) {
+  if (self == NULL) {
+    RTT_Print(0, "Null pointer error in qei set load \r\n");
+    return false;
+  }
+  if (self->is_inited == false) {
+    return false;
+  }
+  if (load > self->etim->max_auto_reload_num) {
+    load = self->etim->max_auto_reload_num;
+  }
+  DL_Timer_setLoadValue(self->etim->mspm0g.tim, load);
+
+  return true;
+  ;
+}
+
+/**
+ * @brief       获取QEI编码器增量值(基准值与当前LOAD的差值)
+ * @param[in]   self   QEI对象指针
+ * @param[out]  delta  增量值输出指针
+ * @retval      true   获取成功
+ * @retval      false  获取失败(空指针或未初始化)
+ */
+static _Bool getDelta(EF_BSP_TimerQEI_t *self, int32_t *delta) {
+  if (self == NULL) {
+    RTT_Print(0, "Null pointer error in qei set load \r\n");
+    return false;
+  }
+  if (self->is_inited == false) {
+    return false;
+  }
+  *delta = self->base_load - DL_Timer_getLoadValue(self->etim->mspm0g.tim);
+  DL_Timer_setLoadValue(self->etim->mspm0g.tim, self->base_load);
   return true;
 }

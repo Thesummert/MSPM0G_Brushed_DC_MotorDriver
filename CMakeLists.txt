@@ -40,11 +40,17 @@ set(Config_Src
 ./User/Config/Src/mcu_device.c
 )
 
+# BSP
 set(BSP_Src 
     ./User/BSP/Src/bsp_time.c
     ./User/BSP/Src/bsp_mspm0g_tim_base.c
     ./User/BSP/Src/bsp_can.c
     ./User/BSP/Src/bsp_mspm0g_it.c
+)
+
+# Device
+set(Device_Src 
+    ./User/Device/Src/qei_encoder.c
 )
 
 
@@ -59,6 +65,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${SYSCONFIG_SRC}
     ${Config_Src}
     ${BSP_Src}
+    ${Device_Src}
 )
 
 # Add include paths
@@ -67,6 +74,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${SYSCONFIG_INC}
     ./User/Config/Inc
     ./User/BSP/Inc
+    ./User/Device/Inc
 )
 
 # Add project symbols (macros)
