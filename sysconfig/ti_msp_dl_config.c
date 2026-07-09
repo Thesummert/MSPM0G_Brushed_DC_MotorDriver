@@ -588,7 +588,19 @@ static const DL_MCAN_MsgRAMConfigParams gMCAN0MsgRAMConfigParams ={
     .rxFIFO1ElemSize      = DL_MCAN_ELEM_SIZE_8BYTES,
 };
 
+static const DL_MCAN_StdMsgIDFilterElement gMCAN0StdFiltelem = {
+    .sfec = 0x1,
+    .sft  = 0x2,
+    .sfid1 = 0,
+    .sfid2 = 0,
+};
 
+static const DL_MCAN_ExtMsgIDFilterElement gMCAN0ExtFiltelem = {
+    .efec = 0x1,
+    .eft  = 0x3,
+    .efid1 = 0,
+    .efid2 = 0,
+};
 
 static const DL_MCAN_BitTimingParams   gMCAN0BitTimes = {
     /* Arbitration Baud Rate Pre-scaler. */
@@ -640,7 +652,11 @@ SYSCONFIG_WEAK void SYSCFG_DL_MCAN0_init(void) {
     /* Configure Message RAM Sections */
     DL_MCAN_msgRAMConfig(MCAN0_INST, (DL_MCAN_MsgRAMConfigParams*) &gMCAN0MsgRAMConfigParams);
 
+    /* Configure Standard ID filter element */
+    DL_MCAN_addStdMsgIDFilter(MCAN0_INST, 0U, (DL_MCAN_StdMsgIDFilterElement *) &gMCAN0StdFiltelem);
 
+    /* Configure Extended ID filter element*/
+    DL_MCAN_addExtMsgIDFilter(MCAN0_INST, 0U, (DL_MCAN_ExtMsgIDFilterElement *) &gMCAN0ExtFiltelem);
 
     /* Set Extended ID Mask. */
     DL_MCAN_setExtIDAndMask(MCAN0_INST, MCAN0_INST_MCAN_EXT_ID_AND_MASK );
@@ -655,7 +671,16 @@ SYSCONFIG_WEAK void SYSCFG_DL_MCAN0_init(void) {
     /* Enable MCAN mopdule Interrupts */
     DL_MCAN_enableIntr(MCAN0_INST, MCAN0_INST_MCAN_INTERRUPTS, 1U);
 
+    DL_MCAN_selectIntrLine(MCAN0_INST, DL_MCAN_INTERRUPT_RF0N|DL_MCAN_INTERRUPT_RF1N, DL_MCAN_INTR_LINE_NUM_0);
+    DL_MCAN_enableIntrLine(MCAN0_INST, DL_MCAN_INTR_LINE_NUM_0, 1U);
+    DL_MCAN_selectIntrLine(MCAN0_INST, DL_MCAN_INTERRUPT_RF0N|DL_MCAN_INTERRUPT_RF1N, DL_MCAN_INTR_LINE_NUM_1);
+    DL_MCAN_enableIntrLine(MCAN0_INST, DL_MCAN_INTR_LINE_NUM_1, 1U);
 
+    /* Enable MSPM0 MCAN interrupt */
+    DL_MCAN_clearInterruptStatus(MCAN0_INST,(DL_MCAN_MSP_INTERRUPT_LINE0
+		 | DL_MCAN_MSP_INTERRUPT_LINE1));
+    DL_MCAN_enableInterrupt(MCAN0_INST,(DL_MCAN_MSP_INTERRUPT_LINE0
+		 | DL_MCAN_MSP_INTERRUPT_LINE1));
 
 }
 

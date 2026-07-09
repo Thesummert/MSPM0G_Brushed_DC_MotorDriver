@@ -161,12 +161,13 @@ void CANFD0_IRQHandler(void) {
   pass.can = MCAN0_INST;
   switch (DL_MCAN_getPendingInterrupt(MCAN0_INST)) {
   case DL_MCAN_IIDX_LINE0:
+  case DL_MCAN_IIDX_LINE1:
     can_it = DL_MCAN_getIntrStatus(MCAN0_INST);
-    if ((can_it | DL_MCAN_INTERRUPT_RF0N)) {
+    if ((can_it & DL_MCAN_INTERRUPT_RF0N)) {
       pass.canid = 0;
       CallbackRunner(&can_it_group, MCAN0_RXFIFO_0_Callback, &pass);
     }
-    if ((can_it | DL_MCAN_INTERRUPT_RF1N)) {
+    if ((can_it & DL_MCAN_INTERRUPT_RF1N)) {
       pass.canid = 1;
       CallbackRunner(&can_it_group, MCAN0_RXFIFO_1_Callback, &pass);
     }

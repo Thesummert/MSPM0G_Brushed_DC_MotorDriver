@@ -1,4 +1,5 @@
 #include "mcu_device.h"
+#include "bsp_can.h"
 #include "bsp_mspm0g_dma.h"
 #include "bsp_mspm0g_it.h"
 #include "bsp_mspm0g_tim_base.h"
@@ -30,7 +31,9 @@ _Bool EasyFrameDevice_Init() {
                             EF_BSP_Uart0_DMA_RxCallback, DMA_INT_IRQn, 2);
   EF_BSP_Uart_Init_IDLE_IT(&uart, UART0_IDLE_RX_CALLBACK,
                            EF_BSP_Uart0_IDLE_RxCallback);
+  // 初始化CAN通信
   EF_BSP_CAN_Init(&can, MCAN0_INST, false, false);
+  EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 2, MCAN0_RXFIFO_0_Callback, MCAN0_RXFIFO_1_Callback);
   EF_BSP_TimerPWM_Init(&motor_control_tim_pwm, &motor_control_tim, 2);
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
   EF_BSP_TimerQEI_Init(&motor_encoder_tim_qei, &motor_encoder_tim);

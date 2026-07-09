@@ -1,15 +1,14 @@
 #include "bsp_can.h"
 #include "bsp_mspm0g_tim_base.h"
+#include "mcu_device.h"
 #include "ti/driverlib/dl_gpio.h"
 #include "ti_msp_dl_config.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "mcu_device.h"
 
 // Test
 #include "bsp_time.h"
-
 
 EF_BSP_TimerPWM_t *pwm;
 EF_BSP_CAN_t *can;
@@ -21,9 +20,10 @@ int main(void) {
   EasyFrameDevice_Init();
 
   can = EFDevice_Get_CAN();
+  can->max_dlc_len = 8;
+  can->StartRec(can);
   while (1) {
-      can->TransmitFIFO(can, 0x200, data, 4, false);
-      EasyFrameSysTime_Delay(0.02);
+    can->TransmitFIFO(can, 0x200, data, 4, false);
+    EasyFrameSysTime_Delay(0.2);
   }
 }
-
