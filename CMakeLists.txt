@@ -68,6 +68,7 @@ set(Application_Src
     ./User/Application/Src/motor_task.c
     ./User/Application/Src/comm_task.c
     ./User/Application/Src/detect_task.c
+    ./User/Application/Src/motor_runner.c
 )
 
 # Link directories setup
