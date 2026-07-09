@@ -6,7 +6,6 @@
  * @versions {"tool":"1.27.0+4565"}
  */
 scripting.excludeFromBuild("device_linker.cmd");
-scripting.excludeFromBuild("device_linker.lds");
 scripting.excludeFromBuild("device.opt");
 scripting.excludeFromBuild("device.cmd.genlibs");
 scripting.excludeFromBuild("device.lds.genlibs");
@@ -117,18 +116,20 @@ PWM1.ccp0PinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric8";
 PWM1.ccp1PinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric9";
 
 QEI1.$name                      = "QEI_0";
+QEI1.loadValue                  = 32768;
 QEI1.peripheral.$assign         = "TIMG8";
 QEI1.peripheral.ccp0Pin.$assign = "PB15";
 QEI1.peripheral.ccp1Pin.$assign = "PB16";
 QEI1.ccp0PinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric0";
 QEI1.ccp1PinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric1";
 
-SYSCTL.clockTreeEn     = true;
 SYSCTL.useHFCLK_Manual = true;
 SYSCTL.HFCLKSource     = "HFXT";
 SYSCTL.SYSPLLSource    = "HFCLK";
 SYSCTL.SYSPLL_Pdiv     = 1;
 SYSCTL.SYSPLL_CLK2XEn  = true;
+SYSCTL.clockTreeEn     = true;
+SYSCTL.HFCLK_Freq      = 16000000;
 
 SYSTICK.periodEnable    = true;
 SYSTICK.interruptEnable = true;
@@ -137,6 +138,7 @@ SYSTICK.period          = 80000;
 TIMER1.timerClkSrc        = "MFCLK";
 TIMER1.timerMode          = "PERIODIC_UP";
 TIMER1.$name              = "SYSTEM_TIMER";
+TIMER1.timerPeriod        = "0";
 TIMER1.peripheral.$assign = "TIMG12";
 
 UART1.$name                    = "UART_0";

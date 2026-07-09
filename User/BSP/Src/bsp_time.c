@@ -3,6 +3,7 @@
 #include "ti/driverlib/dl_timer.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/reent.h>
 
@@ -11,6 +12,7 @@ static _Bool StopCounter(EF_BSP_TimerBase_t *self);
 static _Bool setCounterMode(EF_BSP_TimerBase_t *self,
                             EF_TimerCounterMode_e mode);
 static _Bool setCounterPrescaler(EF_BSP_TimerBase_t *self, uint32_t prescaler);
+static _Bool getFreq(EF_BSP_TimerBase_t *self, float *freq);
 
 static _Bool SetPWM_Float(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
                           float radio);
@@ -45,11 +47,13 @@ _Bool EF_BSP_TimerBase_Init(EF_BSP_TimerBase_t *self, GPTIMER_Regs *tim,
   self->mspm0g.tim = tim;
   self->max_auto_reload_num = max_auto_reload_num;
   self->max_prescaler = max_prescaler;
+  self->max_freq = clock_source_freq;
 
   self->StartCounter = StartCounter;
   self->StopCounter = StopCounter;
   self->setCounterMode = setCounterMode;
   self->setCounterPrescaler = setCounterPrescaler;
+  self->getFreq = getFreq;
 
   self->is_inited = true;
 
@@ -174,6 +178,34 @@ static _Bool setCounterPrescaler(EF_BSP_TimerBase_t *self, uint32_t prescaler) {
   return true;
 }
 
+/**
+ * @brief 获取定时器的实际频率
+ *
+ * 该函数用于计算并返回定时器的实际工作频率。
+ *
+ * @param self 指向定时器基类结构体的指针，不能为空。
+ * @param freq 输出参数，用于存放计算得到的频率值，可以为NULL。
+ * @retval true  获取频率成功。
+ * @retval false 获取频率失败（如self为NULL或未初始化）。
+ */
+
+static _Bool getFreq(EF_BSP_TimerBase_t *self, float *freq) {
+  if (self == NULL) {
+    RTT_Print(0, "Null pointer error in tim start \r\n");
+    return false;
+  }
+  if (self->is_inited == false) {
+    return false;
+  }
+  self->freq = self->max_freq / self->prescaler / self->auto_reload_num;
+
+  if (freq != NULL) {
+    *freq = self->freq;
+  }
+
+  return true;
+}
+
 /*===========PWM===========*/
 /**
  * @brief       初始化PWM控制器
@@ -232,8 +264,8 @@ static _Bool SetPWM(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
     return false;
   }
   // 超出最大值则设定为最大值
-  if (compare > self->etim->max_auto_reload_num) {
-    compare = self->etim->max_auto_reload_num;
+  if (compare > self->etim->mspm0g.tim->COUNTERREGS.LOAD) {
+    compare = self->etim->mspm0g.tim->COUNTERREGS.LOAD;
   }
   // 对于此设定方式 不设置浮点设定值 减少性能开销
   self->channels[channel_id] = compare;
@@ -266,7 +298,7 @@ static _Bool SetPWM_Float(EF_BSP_TimerPWM_t *self, uint8_t channel_id,
     radio = 0.0f;
   }
   self->radio[channel_id] = radio;
-  self->channels[channel_id] = self->etim->max_auto_reload_num * radio;
+  self->channels[channel_id] = self->etim->mspm0g.tim->COUNTERREGS.LOAD * radio;
   DL_Timer_setCaptureCompareValue(self->etim->mspm0g.tim,
                                   self->channels[channel_id], channel_id);
 

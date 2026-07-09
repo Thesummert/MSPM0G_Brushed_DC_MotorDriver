@@ -366,7 +366,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_QEI_0_init(void) {
         DL_TIMER_CC_INPUT_INV_NOINVERT, DL_TIMER_CC_0_INDEX);
     DL_TimerG_configQEI(QEI_0_INST, DL_TIMER_QEI_MODE_2_INPUT,
         DL_TIMER_CC_INPUT_INV_NOINVERT, DL_TIMER_CC_1_INDEX);
-    DL_TimerG_setLoadValue(QEI_0_INST, 65535);
+    DL_TimerG_setLoadValue(QEI_0_INST, 32768);
     DL_TimerG_enableClock(QEI_0_INST);
 }
 
@@ -385,7 +385,7 @@ static const DL_TimerG_ClockConfig gSYSTEM_TIMERClockConfig = {
 
 /*
  * Timer load value (where the counter starts from) is calculated as (timerPeriod * timerClockFreq) - 1
- * SYSTEM_TIMER_INST_LOAD_VALUE = (0 ms * 4000000 Hz) - 1
+ * SYSTEM_TIMER_INST_LOAD_VALUE = (0 * 4000000 Hz) - 1
  */
 static const DL_TimerG_TimerConfig gSYSTEM_TIMERTimerConfig = {
     .period     = SYSTEM_TIMER_INST_LOAD_VALUE,

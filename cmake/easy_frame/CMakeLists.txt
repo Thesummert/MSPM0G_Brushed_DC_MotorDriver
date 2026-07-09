@@ -16,6 +16,7 @@ set(MSPM0G_DL_EASY_FRAME_INC
 # CMSIS Library
 set(CMSIS_INC 
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../../source/third_party/CMSIS/Core/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../source/third_party/CMSIS/DSP/Include
 )
 
 # Core
