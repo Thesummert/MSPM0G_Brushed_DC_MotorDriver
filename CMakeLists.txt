@@ -48,6 +48,7 @@ set(BSP_Src
     ./User/BSP/Src/bsp_mspm0g_it.c
     ./User/BSP/Src/bsp_mspm0g_usart.c
     ./User/BSP/Src/bsp_mspm0g_dma.c
+    ./User/BSP/Src/bsp_mspm0g_gpio.c
 )
 
 # Device

@@ -4,3 +4,5 @@
 
 # 排除macos小垃圾
 /**/.DS_Store
+
+**.jdebug

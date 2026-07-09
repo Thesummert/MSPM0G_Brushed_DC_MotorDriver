@@ -6,11 +6,13 @@ extern "C" {
 #endif
 
 #include "bsp_time.h"
+#include "bsp_can.h"
 
 _Bool EasyFrameDevice_Init();
 
-EF_BSP_TimerPWM_t * EFDevice_Get_PWM();
-EF_BSP_TimerQEI_t *  EFDevice_Get_QEI();
+EF_BSP_TimerPWM_t *EFDevice_Get_PWM();
+EF_BSP_TimerQEI_t *EFDevice_Get_QEI();
+EF_BSP_CAN_t *EFDevice_Get_CAN();
 
 #ifdef __cplusplus
 }
