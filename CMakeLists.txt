@@ -46,6 +46,8 @@ set(BSP_Src
     ./User/BSP/Src/bsp_mspm0g_tim_base.c
     ./User/BSP/Src/bsp_can.c
     ./User/BSP/Src/bsp_mspm0g_it.c
+    ./User/BSP/Src/bsp_mspm0g_usart.c
+    ./User/BSP/Src/bsp_mspm0g_dma.c
 )
 
 # Device

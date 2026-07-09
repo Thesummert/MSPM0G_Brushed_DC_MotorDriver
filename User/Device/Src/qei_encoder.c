@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/reent.h>
-#include "arm_math.h"
 
 
 static _Bool getSpeed(EF_QEI_Encoder_t *self, float dt, float *omega_rotor, float *omega_output);
@@ -38,6 +37,8 @@ _Bool EF_Device_QEI_Encoder_Init(EF_QEI_Encoder_t *self, EF_BSP_TimerQEI_t *qei,
     self->inv_pulse_per_rev = 1.0 / ppr;
     self->inv_multiplier = 1.0f / multiplier;
     self->inv_radio = 1.0f / radio;
+
+    self->getSpeed = getSpeed;
 
     self->is_inited = true;
 

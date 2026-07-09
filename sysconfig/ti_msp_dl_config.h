@@ -170,6 +170,14 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
 
+/* Defines for DMA_CH1 */
+#define DMA_CH1_CHAN_ID                                                      (1)
+#define UART_0_INST_DMA_TRIGGER_0                            (DMA_UART0_RX_TRIG)
+/* Defines for DMA_CH0 */
+#define DMA_CH0_CHAN_ID                                                      (0)
+#define UART_0_INST_DMA_TRIGGER_1                            (DMA_UART0_TX_TRIG)
+
+
 /* Port definition for Pin Group LED_PORT */
 #define LED_PORT_PORT                                                    (GPIOB)
 
@@ -236,6 +244,7 @@ void SYSCFG_DL_QEI_0_init(void);
 void SYSCFG_DL_SYSTEM_TIMER_init(void);
 void SYSCFG_DL_I2C_0_init(void);
 void SYSCFG_DL_UART_0_init(void);
+void SYSCFG_DL_DMA_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);
 void SYSCFG_DL_MCAN0_init(void);

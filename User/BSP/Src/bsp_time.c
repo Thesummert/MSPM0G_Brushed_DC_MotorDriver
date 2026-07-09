@@ -405,6 +405,7 @@ _Bool EF_BSP_TimerQEI_Init(EF_BSP_TimerQEI_t *self, EF_BSP_TimerBase_t *etim) {
     return false;
   }
   memset(self, 0, sizeof(EF_BSP_TimerQEI_t));
+  self->etim = etim;
   // 获取默认装载值
   self->base_load = DL_Timer_getLoadValue(self->etim->mspm0g.tim);
 
