@@ -39,6 +39,7 @@ QueueHandle_t FreeRTOS_GetQueue(uint8_t index) { return queues[index]; }
 /*默认任务行为*/
 __WEAK void MotorTask() {
     while (1) {
+        vTaskDelay(1000);
     }
 }
 __WEAK void CommTask() {

@@ -54,8 +54,21 @@ set(BSP_Src
 # Device
 set(Device_Src 
     ./User/Device/Src/qei_encoder.c
+    ./User/Device/Src/brushed_motor.c
 )
 
+# Algorithm
+set(Algorithm_Src
+    ./User/Algorithm/Src/crc_ref.c
+    ./User/Algorithm/Src/pid.c
+)
+
+#Application 
+set(Application_Src 
+    ./User/Application/Src/motor_task.c
+    ./User/Application/Src/comm_task.c
+    ./User/Application/Src/detect_task.c
+)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -78,6 +91,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ./User/Config/Inc
     ./User/BSP/Inc
     ./User/Device/Inc
+    ./User/Algorithm/Inc
+    ./User/Application/Inc
 )
 
 # Add project symbols (macros)
