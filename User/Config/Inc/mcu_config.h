@@ -49,6 +49,10 @@ extern "C" {
 // FREERTOS 最大队列数量
 #define FREE_RTOS_MAX_QUEUE 16
 
+    // 软件看门狗最大实例数量
+#define SOFT_WDT_MAX_INST_NUM 16
+
+
 #ifdef __cplusplus
 }
 #endif
