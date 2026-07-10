@@ -1,4 +1,5 @@
 #include "mcu_device.h"
+#include "brushed_motor.h"
 #include "bsp_mspm0g_dma.h"
 #include "bsp_mspm0g_it.h"
 #include "bsp_mspm0g_tim_base.h"
@@ -15,6 +16,8 @@ static EF_BSP_TimerQEI_t motor_encoder_tim_qei;
 
 static EF_Usart_Typedef uart;
 static EF_BSP_CAN_t can;
+
+static EF_BrushedMotor_t motor;
 
 _Bool EasyFrameDevice_Init() {
   EasyFrameSysTime_Init(4); // 初始化系统定时
@@ -35,6 +38,9 @@ _Bool EasyFrameDevice_Init() {
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
   EF_BSP_TimerQEI_Init(&motor_encoder_tim_qei, &motor_encoder_tim);
 
+  EF_BrushedMotor_Init(&motor, BRUSHED_MOTOR_TYPE1, false,
+                       &motor_control_tim_pwm);
+
   return true;
 }
 
@@ -43,3 +49,5 @@ EF_BSP_TimerPWM_t *EFDevice_Get_PWM() { return &motor_control_tim_pwm; }
 EF_BSP_TimerQEI_t *EFDevice_Get_QEI() { return &motor_encoder_tim_qei; }
 
 EF_BSP_CAN_t *EFDevice_Get_CAN() { return &can; }
+
+EF_BrushedMotor_t *EFDevice_Get_Motor() { return &motor; }

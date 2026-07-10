@@ -87,5 +87,6 @@ static _Bool Stop(BrushedMotorRunner_t *self) {
     return false;
   }
   self->motor->Stop(self->motor);
+  PIDClear(&self->omega_pid);
   return true;
 }
