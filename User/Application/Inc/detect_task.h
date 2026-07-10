@@ -11,13 +11,14 @@ extern "C" {
 
 #define SOFT_WDT_ID_MAX_LEN 16
 
-typedef struct {
+typedef struct EF_App_SoftWDT_t {
   uint8_t wdt_name[SOFT_WDT_ID_MAX_LEN]; // 存储字符串 保存WDT实例名
   uint32_t load;                         // 装载值
   uint32_t cnt;                          // 看门狗计时器
   _Bool is_online;                       // 是否在线
   void (*Callback)(void *item);          // 回调函数
   void *item;                            // 万能空指针 传递参数使用
+  _Bool (*Feed)(struct EF_App_SoftWDT_t *self);
 } EF_App_SoftWDT_t;
 
 typedef struct EF_App_SoftWDT_Group_t {

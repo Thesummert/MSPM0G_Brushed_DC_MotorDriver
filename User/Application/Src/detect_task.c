@@ -21,6 +21,7 @@ void DetectTask() {
   }
 }
 
+static _Bool Feed(EF_App_SoftWDT_t *self);
 static _Bool IsOffline(EF_App_SoftWDT_t *self);
 static _Bool Check(EF_App_SoftWDT_Group_t *self);
 
@@ -47,6 +48,7 @@ _Bool EF_SoftWDT_Init(EF_App_SoftWDT_t *self, uint8_t *id, uint8_t id_len,
   self->is_online = true;
   self->Callback = Callback;
   self->item = item;
+  self->Feed = Feed;
   if (id_len > SOFT_WDT_ID_MAX_LEN) {
     // 超出最长ID 仅保留前面最长长度
     memcpy(self->wdt_name, id, SOFT_WDT_ID_MAX_LEN - 1);
@@ -75,6 +77,21 @@ static _Bool IsOffline(EF_App_SoftWDT_t *self) {
     }
     return false;
   }
+  return true;
+}
+
+/**
+ * @brief          喂狗，重置看门狗计数器
+ * @param[in] self 看门狗实例指针
+ * @retval true    喂狗成功
+ * @retval false   喂狗失败（self 为空）
+ */
+static _Bool Feed(EF_App_SoftWDT_t *self) {
+  if (self == NULL) {
+    RTT_Print(0, "Nullpointer error in wdt check feed\r\n");
+    return false;
+  }
+  self->cnt = self->load;
   return true;
 }
 
