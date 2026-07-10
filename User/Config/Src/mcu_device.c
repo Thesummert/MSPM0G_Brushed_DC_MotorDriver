@@ -37,6 +37,7 @@ _Bool EasyFrameDevice_Init() {
   // 初始化CAN通信
   EF_BSP_CAN_Init(&can, MCAN0_INST, false, false);
   EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 2, MCAN0_RXFIFO_0_Callback, MCAN0_RXFIFO_1_Callback);
+
   EF_BSP_TimerPWM_Init(&motor_control_tim_pwm, &motor_control_tim, 2);
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
   EF_BSP_TimerQEI_Init(&motor_encoder_tim_qei, &motor_encoder_tim);
