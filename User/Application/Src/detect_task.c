@@ -167,4 +167,5 @@ EF_App_SoftWDT_Group_t *EF_App_SoftWDT_Group_Get(uint16_t id) {
   default:
     break;
   }
+  return  NULL;
 }

@@ -1,10 +1,13 @@
 #include "mcu_device.h"
-#include "bsp_can.h"
+#include "at24cxx.h"
 #include "brushed_motor.h"
+#include "bsp_can.h"
 #include "bsp_mspm0g_dma.h"
 #include "bsp_mspm0g_it.h"
 #include "bsp_mspm0g_tim_base.h"
 #include "bsp_mspm0g_usart.h"
+#include "comm_led.h"
+#include "detect_task.h"
 #include "ti/devices/msp/m0p/mspm0g350x.h"
 #include "ti_msp_dl_config.h"
 #include <stdbool.h>
@@ -19,9 +22,15 @@ static EF_Usart_Typedef uart;
 static EF_BSP_CAN_t can;
 
 static EF_BrushedMotor_t motor;
+static EF_Device_AT24CXX_t at24;
+EF_Device_Comm_LED_t status_led;
 
 _Bool EasyFrameDevice_Init() {
   EasyFrameSysTime_Init(4); // 初始化系统定时
+  EF_Device_Comm_LED_Init(&status_led, LED_PORT_PORT, LED_PORT_LED_PIN_PIN, 1);
+
+  // 初始化看门狗
+  EF_App_SoftWDT_Group_Init(EF_App_SoftWDT_Group_Get(0));
   EF_BSP_TimerBase_Init(&motor_control_tim, PWM_0_INST, 80000000, 0xFF, 0xFFFF);
 
   // 初始化通信串口
@@ -36,7 +45,12 @@ _Bool EasyFrameDevice_Init() {
                            EF_BSP_Uart0_IDLE_RxCallback);
   // 初始化CAN通信
   EF_BSP_CAN_Init(&can, MCAN0_INST, false, false);
-  EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 2, MCAN0_RXFIFO_0_Callback, MCAN0_RXFIFO_1_Callback);
+  EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 2, MCAN0_RXFIFO_0_Callback,
+                    MCAN0_RXFIFO_1_Callback);
+
+  // 初始化eeprom
+  EF_Device_AT24CXX_Init(&at24, EF_AT24_TYPE_C2, 0b1010000, I2C_0_INST,
+                         80000000);
 
   EF_BSP_TimerPWM_Init(&motor_control_tim_pwm, &motor_control_tim, 2);
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
@@ -55,3 +69,7 @@ EF_BSP_TimerQEI_t *EFDevice_Get_QEI() { return &motor_encoder_tim_qei; }
 EF_BSP_CAN_t *EFDevice_Get_CAN() { return &can; }
 
 EF_BrushedMotor_t *EFDevice_Get_Motor() { return &motor; }
+
+EF_Device_AT24CXX_t *EFDevice_Get_EEPROM() { return &at24; }
+
+EF_Device_Comm_LED_t *EFDevice_Get_LED() { return &status_led; }

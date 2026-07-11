@@ -26,7 +26,7 @@ typedef struct EF_App_SoftWDT_Group_t {
   uint16_t num;
   uint16_t online_num;
 
-  _Bool (*Check)(struct EF_App_SoftWDT_Group_t *self)
+  _Bool (*Check)(struct EF_App_SoftWDT_Group_t *self);
 } EF_App_SoftWDT_Group_t;
 
 _Bool EF_SoftWDT_Init(EF_App_SoftWDT_t *self, uint8_t *id, uint8_t id_len,

@@ -8,6 +8,8 @@ extern "C" {
 #include "bsp_time.h"
 #include "bsp_can.h"
 #include "brushed_motor.h"
+#include "at24cxx.h"
+#include "comm_led.h"
 
 _Bool EasyFrameDevice_Init();
 
@@ -15,6 +17,8 @@ EF_BSP_TimerPWM_t *EFDevice_Get_PWM();
 EF_BSP_TimerQEI_t *EFDevice_Get_QEI();
 EF_BSP_CAN_t *EFDevice_Get_CAN();
 EF_BrushedMotor_t *EFDevice_Get_Motor();
+EF_Device_AT24CXX_t *EFDevice_Get_EEPROM();
+EF_Device_Comm_LED_t *EFDevice_Get_LED();
 
 #ifdef __cplusplus
 }

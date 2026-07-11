@@ -49,12 +49,16 @@ set(BSP_Src
     ./User/BSP/Src/bsp_mspm0g_usart.c
     ./User/BSP/Src/bsp_mspm0g_dma.c
     ./User/BSP/Src/bsp_mspm0g_gpio.c
+    ./User/BSP/Src/bsp_mspm0g_i2c.c
 )
 
 # Device
 set(Device_Src 
     ./User/Device/Src/qei_encoder.c
     ./User/Device/Src/brushed_motor.c
+    ./User/Device/Src/at24cxx.c
+    ./User/Device/Src/comm_led.c
+
 )
 
 # Algorithm
@@ -71,6 +75,11 @@ set(Application_Src
     ./User/Application/Src/motor_runner.c
 )
 
+# Protocol
+set(Protocol_Src 
+    ./User/Protocol/Src/master_slave_codec.c
+)
+
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -83,6 +92,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${Config_Src}
     ${BSP_Src}
     ${Device_Src}
+    ${Protocol_Src}
+    ${Application_Src}
+    ${Algorithm_Src}
 )
 
 # Add include paths
@@ -94,6 +106,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ./User/Device/Inc
     ./User/Algorithm/Inc
     ./User/Application/Inc
+    ./User/Protocol/Inc
 )
 
 # Add project symbols (macros)
