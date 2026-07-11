@@ -78,6 +78,7 @@ set(Application_Src
 # Protocol
 set(Protocol_Src 
     ./User/Protocol/Src/master_slave_codec.c
+    ./User/Protocol/Src/motor_can_control.c
 )
 
 # Link directories setup

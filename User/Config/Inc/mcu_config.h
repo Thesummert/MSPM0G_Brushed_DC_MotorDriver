@@ -7,7 +7,7 @@ extern "C" {
 
 #include "stdint.h"
 
-#define BUS_CLK 80  // 主线时钟
+#define BUS_CLK 80 // 主线时钟
 
 // 是否使用RTT
 #define USING_SEGGER_RTT 1
@@ -23,14 +23,12 @@ extern "C" {
 // 一个中断组合最大容量
 #define IT_GROUP_ITEM_MAX_SIZE 16
 
-
 // I2C FIFO BUFFER大小
 #define I2C_FIFO_MAX_SIZE 8
 
-
 #define UART_ENABLE_FIFO 1
-#define UART_ENABLE_DMA  1
-#define UART_ENABLE_IT   1
+#define UART_ENABLE_DMA 1
+#define UART_ENABLE_IT 1
 
 #if UART_ENABLE_FIFO == 1
 #define UART_TX_FIFO_MAX_SIZE 4
@@ -45,13 +43,14 @@ extern "C" {
 #if UART_ENABLE_IT == 1
 #endif
 
-
 // FREERTOS 最大队列数量
 #define FREE_RTOS_MAX_QUEUE 16
 
-    // 软件看门狗最大实例数量
+// 软件看门狗最大实例数量
 #define SOFT_WDT_MAX_INST_NUM 16
 
+// 电机驱动模块是否是主机
+#define BRUSHED_MOTOR_IS_MASTER 0
 
 #ifdef __cplusplus
 }

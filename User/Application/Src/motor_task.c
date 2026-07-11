@@ -1,13 +1,14 @@
 #include "motor_task.h"
 #include "bsp_mspm0g_tim_base.h"
+#include "detect_task.h"
 #include "mcu_device.h"
 #include "motor_runner.h"
 #include "pid.h"
+#include <math.h>
 #include <reent.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "detect_task.h"
 
 #define MOTOR_PID_KP 0.0f
 #define MOTOR_PID_KI 0.0f
@@ -49,7 +50,7 @@ void MotorTask_Init() {
   // 初始化看门狗
   uint8_t id[6] = "motor";
   EF_SoftWDT_Init(&wdt_motor_task, id, 6, 10, NULL, NULL);
-  EF_App_SoftWDT_Group_Add(EF_App_SoftWDT_Group_Get(0 ), &wdt_motor_task);
+  EF_App_SoftWDT_Group_Add(EF_App_SoftWDT_Group_Get(0), &wdt_motor_task);
 }
 
 static void MotorTask_Run() {
@@ -85,4 +86,30 @@ static void MotorTask_Run() {
     }
     break;
   }
+}
+
+static _Bool CAN_Decode(MotorTask_t *self, uint8_t *data) {
+  if (self == NULL) {
+    RTT_Print(0, "Null pointer error in motor task can decode \r\n");
+    return false;
+  }
+  // 确定电机方向
+  int8_t direction = (data[0] & (1 << 5)) ? -1 : 1;
+  uint8_t status = (data[0] & (0b11 << 6)) >> 6;
+  switch (status) {
+  case 0b00:
+    motor_task.status = MOTOR_IDLE;
+    break;
+  case 0b01:
+    motor_task.status = MOTOR_RUN;
+    break;
+  case 0b11:
+    motor_task.status = MOTOR_BREAK;
+    break;
+  default:
+    break;
+  }
+  motor_task.set_omega =
+      direction * ((float)(data[1] << 8 | data[2]) / 10000.0f);
+  return true;
 }

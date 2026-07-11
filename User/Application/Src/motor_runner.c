@@ -3,6 +3,7 @@
 #include "mcu_config.h"
 #include "pid.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,6 +12,15 @@ static _Bool Break(BrushedMotorRunner_t *self);
 static _Bool Start(BrushedMotorRunner_t *self);
 static _Bool Stop(BrushedMotorRunner_t *self);
 
+/**
+ * @brief         初始化电机运行器
+ * @param[in,out] self            电机运行器对象指针
+ * @param[in]     motor           有刷电机对象指针
+ * @param[in]     pid_init        PID初始化配置
+ * @param[in]     low_pass_filter 低通滤波系数（0~1，越大越平滑）
+ * @retval        true            初始化成功
+ * @retval        false           初始化失败（空指针）
+ */
 _Bool BrushedMotorRunner_Init(BrushedMotorRunner_t *self,
                               EF_BrushedMotor_t *motor,
                               PID_Init_Config_s *pid_init,
@@ -35,6 +45,14 @@ _Bool BrushedMotorRunner_Init(BrushedMotorRunner_t *self,
   return true;
 }
 
+/**
+ * @brief         运行控制：获取当前转速 → 低通滤波 → PID计算 → 设置输出
+ * @param[in]     self   电机运行器对象指针
+ * @param[in]     set    目标转速
+ * @param[in]     dt     控制周期（秒）
+ * @retval        true   执行成功
+ * @retval        false  执行失败
+ */
 static _Bool Run(BrushedMotorRunner_t *self, float set, float dt) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in motor runner set \r\n");
@@ -53,6 +71,12 @@ static _Bool Run(BrushedMotorRunner_t *self, float set, float dt) {
   return false;
 }
 
+/**
+ * @brief         急停制动：调用电机刹车并清除PID积分
+ * @param[in]     self   电机运行器对象指针
+ * @retval        true   制动成功
+ * @retval        false  制动失败
+ */
 static _Bool Break(BrushedMotorRunner_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in motor runner break \r\n");
@@ -66,6 +90,12 @@ static _Bool Break(BrushedMotorRunner_t *self) {
   return true;
 }
 
+/**
+ * @brief         启动电机：调用电机的启动接口
+ * @param[in]     self   电机运行器对象指针
+ * @retval        true   启动成功
+ * @retval        false  启动失败
+ */
 static _Bool Start(BrushedMotorRunner_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in motor runner start \r\n");
@@ -78,6 +108,12 @@ static _Bool Start(BrushedMotorRunner_t *self) {
   return true;
 }
 
+/**
+ * @brief         停止电机：调用电机停止并清除PID积分
+ * @param[in]     self   电机运行器对象指针
+ * @retval        true   停止成功
+ * @retval        false  停止失败
+ */
 static _Bool Stop(BrushedMotorRunner_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in motor runner stop \r\n");
@@ -90,3 +126,4 @@ static _Bool Stop(BrushedMotorRunner_t *self) {
   PIDClear(&self->omega_pid);
   return true;
 }
+
