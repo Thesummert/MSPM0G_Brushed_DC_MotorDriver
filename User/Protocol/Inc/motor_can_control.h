@@ -47,6 +47,7 @@ typedef struct {
 /*从机到主机结构体*/
 typedef struct MotorCan_Slave2Master_t {
   uint16_t slave_id; // 设定的从机地址
+  uint16_t master_id; // 设定的主机地址
   union {
     struct {
       uint8_t status; // 驱动器状态 [7:7]被设计用来表示速度方向
@@ -61,7 +62,7 @@ typedef struct MotorCan_Slave2Master_t {
                   float speed);
 } MotorCan_Slave2Master_t;
 
-_Bool MotorCanSlave_Init(MotorCan_Slave2Master_t *self, uint16_t id);
+_Bool MotorCanSlave_Init(MotorCan_Slave2Master_t *self, uint16_t master_id, uint16_t slave_id);
 
 #endif
 

@@ -10,6 +10,8 @@
 #include "comm_key.h"
 #include "comm_led.h"
 #include "detect_task.h"
+#include "mcu_config.h"
+#include "qei_encoder.h"
 #include "ti/devices/msp/m0p/mspm0g350x.h"
 #include "ti_msp_dl_config.h"
 #include <stdbool.h>
@@ -27,8 +29,10 @@ static EF_BSP_CAN_t can;
 
 static EF_BrushedMotor_t motor;
 static EF_Device_AT24CXX_t at24;
-EF_Device_Comm_LED_t status_led;
-EF_Device_CommKey_t control_key;
+static EF_Device_Comm_LED_t status_led;
+static EF_Device_CommKey_t control_key;
+static EF_QEI_Encoder_t qei_encoder;
+
 
 _Bool EasyFrameDevice_Init() {
   EasyFrameSysTime_Init(4); // 初始化系统定时
@@ -63,8 +67,11 @@ _Bool EasyFrameDevice_Init() {
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
   EF_BSP_TimerQEI_Init(&motor_encoder_tim_qei, &motor_encoder_tim);
 
+  // 初始化电机
   EF_BrushedMotor_Init(&motor, BRUSHED_MOTOR_TYPE1, false,
                        &motor_control_tim_pwm);
+  EF_Device_QEI_Encoder_Init(&qei_encoder, &motor_encoder_tim_qei, MOTOR_MODULE_DEFAULT_PPR, MOTOR_MODULE_DEFAULT_MULTIPLY, MOTOR_MODULE_DEFAULT_RADIO);
+  EF_BrushedMotor_InitQEI(&motor, &qei_encoder);
 
   return true;
 }
@@ -74,6 +81,8 @@ EF_BSP_TimerPWM_t *EFDevice_Get_PWM() { return &motor_control_tim_pwm; }
 EF_BSP_TimerQEI_t *EFDevice_Get_QEI() { return &motor_encoder_tim_qei; }
 
 EF_BSP_CAN_t *EFDevice_Get_CAN() { return &can; }
+
+EF_Usart_Typedef *EFDevice_Get_Uart() { return &uart; }
 
 EF_BrushedMotor_t *EFDevice_Get_Motor() { return &motor; }
 

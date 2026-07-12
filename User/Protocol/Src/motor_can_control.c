@@ -9,13 +9,14 @@
 static void S2MEncoder(MotorCan_Slave2Master_t *self, uint8_t status,
                        float speed);
 
-_Bool MotorCanSlave_Init(MotorCan_Slave2Master_t *self, uint16_t id) {
+_Bool MotorCanSlave_Init(MotorCan_Slave2Master_t *self, uint16_t master_id, uint16_t slave_id){
   if (self == NULL) {
     RTT_Print(0, "NULL pointer error in motor slave init \r\n");
     return false;
   }
   memset(self, 0, sizeof(MotorCan_Slave2Master_t));
-  self->slave_id = id;
+  self->slave_id = slave_id;
+  self->master_id = master_id;
   self->Encoder = S2MEncoder;
 
   return true;

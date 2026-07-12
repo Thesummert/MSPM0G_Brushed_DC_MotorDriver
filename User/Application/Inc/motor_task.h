@@ -1,6 +1,7 @@
 #ifndef __MOTOR_TASK_H__
 #define __MOTOR_TASK_H__
 
+#include "pid.h"
 #include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,8 @@ typedef struct {
 } MotorTask_t;
 
 void MotorTask_Init();
+PIDInstance *MotorTask_GetPID();
+BrushedMotorRunner_t *MotorTask_GetRunner();
 
 #ifdef __cplusplus
 }

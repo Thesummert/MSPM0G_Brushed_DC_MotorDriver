@@ -40,6 +40,7 @@ void MotorTask_Init() {
       .IntegralLimit = MOTOR_PID_INTEGRAL_LIMIT,
       .DeadBand = MOTOR_PID_DEADBAND,
       .Output_LPF_RC = MOTOR_PID_LPF,
+      .Improve = PID_Integral_Limit | PID_OutputFilter,
 
   };
   memset(&motor_task, 0, sizeof(MotorTask_t));
@@ -113,3 +114,8 @@ static _Bool CAN_Decode(MotorTask_t *self, uint8_t *data) {
       direction * ((float)(data[1] << 8 | data[2]) / 10000.0f);
   return true;
 }
+
+PIDInstance *MotorTask_GetPID() { return &motor_task.motor.omega_pid; }
+
+BrushedMotorRunner_t *MotorTask_GetRunner() { return &motor_task.motor; }
+

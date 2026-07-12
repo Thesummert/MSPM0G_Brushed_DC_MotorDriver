@@ -17,8 +17,17 @@ extern "C" {
 
 #include "mcu_device.h"
 
+/*电机模块回报频率*/
+typedef enum {
+  MOTOR_MODULE_FREQ_100,
+  MOTOR_MODULE_FREQ_200,
+  MOTOR_MODULE_FREQ_500,
+  MOTOR_MODULE_FREQ_1000,
+} MotorModuleFreq_e;
+
 typedef struct {
   uint16_t slave_id; // 从机ID
+  uint16_t master_id; // 主机ID
   // PID
   float kp;
   float ki;
@@ -31,6 +40,9 @@ typedef struct {
   float radio;
   uint8_t multiplier;
   uint32_t ppr;
+  uint8_t freq;
+  // 回报率
+
   // CRC
   uint16_t crc;
 } MotorModuleStroageData_t;
@@ -48,7 +60,7 @@ typedef struct MotorManager_t {
   _Bool write_flag;            // 写入完成标志位
 
   _Bool (*Write)(struct MotorManager_t *self);
-  _Bool (*Read)(struct MotorManager_t *self);
+  _Bool (*Read)(struct MotorManager_t *self, uint8_t try_time);
 } MotorManager_t;
 
 _Bool MotorManager_Init(MotorManager_t *self, EF_Device_AT24CXX_t *eeprom);

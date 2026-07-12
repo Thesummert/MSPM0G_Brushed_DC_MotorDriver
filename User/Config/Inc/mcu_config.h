@@ -55,6 +55,15 @@ extern "C" {
 // 电机模块数据存储地址
 #define MOTOR_MODULE_STROAGE_DATA_ADDR 0x00
 
+// 电机模块默认ID
+#define MOTOR_MODULE_DEFAULT_ID 0x100
+#define MOTOR_MODULE_DEFAULT_MASTER_ID 0x200
+
+// 电机编码器默认参数
+#define MOTOR_MODULE_DEFAULT_PPR 100
+#define MOTOR_MODULE_DEFAULT_MULTIPLY 4
+#define MOTOR_MODULE_DEFAULT_RADIO 30.0f
+
 #ifdef __cplusplus
 }
 #endif
