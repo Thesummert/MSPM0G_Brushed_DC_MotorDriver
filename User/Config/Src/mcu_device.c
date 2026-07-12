@@ -3,9 +3,11 @@
 #include "brushed_motor.h"
 #include "bsp_can.h"
 #include "bsp_mspm0g_dma.h"
+#include "bsp_mspm0g_gpio.h"
 #include "bsp_mspm0g_it.h"
 #include "bsp_mspm0g_tim_base.h"
 #include "bsp_mspm0g_usart.h"
+#include "comm_key.h"
 #include "comm_led.h"
 #include "detect_task.h"
 #include "ti/devices/msp/m0p/mspm0g350x.h"
@@ -18,15 +20,20 @@ static EF_BSP_TimerBase_t motor_encoder_tim;
 static EF_BSP_TimerPWM_t motor_control_tim_pwm;
 static EF_BSP_TimerQEI_t motor_encoder_tim_qei;
 
+static EasyFrame_GPIO_Typedef_t key_gpio;
+
 static EF_Usart_Typedef uart;
 static EF_BSP_CAN_t can;
 
 static EF_BrushedMotor_t motor;
 static EF_Device_AT24CXX_t at24;
 EF_Device_Comm_LED_t status_led;
+EF_Device_CommKey_t control_key;
 
 _Bool EasyFrameDevice_Init() {
   EasyFrameSysTime_Init(4); // 初始化系统定时
+  EasyFrame_GPIO_Init(&key_gpio, LED_PORT_PORT, KEY_PORT_KEY_PIN_PIN);
+  EF_CommKey_Init(&control_key, &key_gpio, 1);
   EF_Device_Comm_LED_Init(&status_led, LED_PORT_PORT, LED_PORT_LED_PIN_PIN, 1);
 
   // 初始化看门狗
@@ -73,3 +80,5 @@ EF_BrushedMotor_t *EFDevice_Get_Motor() { return &motor; }
 EF_Device_AT24CXX_t *EFDevice_Get_EEPROM() { return &at24; }
 
 EF_Device_Comm_LED_t *EFDevice_Get_LED() { return &status_led; }
+
+EF_Device_CommKey_t *EFDevice_Get_Key() { return &control_key; }

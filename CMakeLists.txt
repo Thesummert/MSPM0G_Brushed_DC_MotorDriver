@@ -58,7 +58,7 @@ set(Device_Src
     ./User/Device/Src/brushed_motor.c
     ./User/Device/Src/at24cxx.c
     ./User/Device/Src/comm_led.c
-
+    ./User/Device/Src/comm_key.c
 )
 
 # Algorithm

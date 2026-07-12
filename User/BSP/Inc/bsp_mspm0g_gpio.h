@@ -10,23 +10,28 @@ extern "C" {
 
 // GPIO抽象封装
 typedef struct EasyFrame_GPIO_Typedef_t {
-    _Bool (*Toggle)(struct EasyFrame_GPIO_Typedef_t *self);
-    _Bool (*SetHigh)(struct EasyFrame_GPIO_Typedef_t *self);
-    _Bool (*SetLow)(struct EasyFrame_GPIO_Typedef_t *self);
-    _Bool isInited;
-    // MSPM0G GPIO结构体
-    struct {
-        GPIO_Regs *gpio;
-        uint32_t pin;
-        IOMUX_PINCM iomux;
-    } mspm0g;
+  _Bool (*Toggle)(struct EasyFrame_GPIO_Typedef_t *self);
+  _Bool (*SetHigh)(struct EasyFrame_GPIO_Typedef_t *self);
+  _Bool (*SetLow)(struct EasyFrame_GPIO_Typedef_t *self);
+  _Bool (*Read)(struct EasyFrame_GPIO_Typedef_t *self,
+                               _Bool *level);
+  _Bool isInited;
+  // MSPM0G GPIO结构体
+  struct {
+    GPIO_Regs *gpio;
+    uint32_t pin;
+    IOMUX_PINCM iomux;
+  } mspm0g;
 } EasyFrame_GPIO_Typedef_t;
 
-_Bool EasyFrame_GPIO_Init(EasyFrame_GPIO_Typedef_t *self, GPIO_Regs *gpio, uint32_t pin);
-_Bool EasyFrame_GPIO_InitIOMux(EasyFrame_GPIO_Typedef_t *self, IOMUX_PINCM iomux);
+_Bool EasyFrame_GPIO_Init(EasyFrame_GPIO_Typedef_t *self, GPIO_Regs *gpio,
+                          uint32_t pin);
+_Bool EasyFrame_GPIO_InitIOMux(EasyFrame_GPIO_Typedef_t *self,
+                               IOMUX_PINCM iomux);
 _Bool EasyFrame_GPIO_Toggle(EasyFrame_GPIO_Typedef_t *self);
 _Bool EasyFrame_GPIO_SetHigh(EasyFrame_GPIO_Typedef_t *self);
 _Bool EasyFrame_GPIO_SetLow(EasyFrame_GPIO_Typedef_t *self);
+_Bool EasyFrame_GPIO_Read(EasyFrame_GPIO_Typedef_t *self, _Bool *level);
 
 #ifdef __cplusplus
 }

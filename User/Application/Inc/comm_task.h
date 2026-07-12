@@ -6,6 +6,15 @@ extern "C" {
 #endif
 
 #include "freertos_manager.h"
+#include "motor_can_control.h"
+#include "comm_led.h"
+
+    typedef struct
+    {
+        MotorCan_Slave2Master_t can_transmit;
+        EF_Device_Comm_LED_t *status_led;
+        
+    }CommTask_t;
 
 #ifdef __cplusplus
 }

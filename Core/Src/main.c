@@ -1,5 +1,6 @@
 #include "bsp_can.h"
 #include "bsp_mspm0g_tim_base.h"
+#include "mcu_config.h"
 #include "mcu_device.h"
 #include "ti/driverlib/dl_gpio.h"
 #include "ti_msp_dl_config.h"
@@ -8,22 +9,19 @@
 #include <stdlib.h>
 
 // Test
-#include "bsp_time.h"
+#include "comm_key.h"
 
-EF_BSP_TimerPWM_t *pwm;
-EF_BSP_CAN_t *can;
-int32_t a;
-uint8_t data[4] = {0xaa, 0xbb, 0xcc, 0xdd};
+uint64_t delta;
+uint64_t time_line;
+EF_CommKetOutput_e out;
+uint8_t touch;
 
 int main(void) {
   SYSCFG_DL_init();
   EasyFrameDevice_Init();
 
-  can = EFDevice_Get_CAN();
-  can->max_dlc_len = 8;
-  can->StartRec(can);
   while (1) {
-    can->TransmitFIFO(can, 0x200, data, 4, false);
-    EasyFrameSysTime_Delay(0.2);
+      delta = EasyFrameSysTime_GetTimeline_us()- time_line; 
+      time_line= EasyFrameSysTime_GetTimeline_us();
   }
 }
