@@ -73,12 +73,14 @@ set(Application_Src
     ./User/Application/Src/comm_task.c
     ./User/Application/Src/detect_task.c
     ./User/Application/Src/motor_runner.c
+    ./User/Application/Src/motor_module_manager.c
 )
 
 # Protocol
 set(Protocol_Src 
     ./User/Protocol/Src/master_slave_codec.c
     ./User/Protocol/Src/motor_can_control.c
+    ./User/Protocol/Src/motor_uart_control.c
 )
 
 # Link directories setup

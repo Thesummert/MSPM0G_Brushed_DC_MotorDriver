@@ -55,6 +55,7 @@ typedef struct MotorCan_Slave2Master_t {
     uint8_t datas[3];
   } feedback; // 电机反馈值
 
+
   // 函数指针
   void (*Encoder)(struct MotorCan_Slave2Master_t *self, uint8_t status,
                   float speed);

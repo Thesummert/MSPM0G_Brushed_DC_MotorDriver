@@ -36,8 +36,8 @@ extern "C" {
 #endif
 
 #if UART_ENABLE_DMA == 1
-#define UART_TX_DMA_BUFFER_SIZE 64
-#define UART_RX_DMA_BUFFER_SIZE 64
+#define UART_TX_DMA_BUFFER_SIZE 128
+#define UART_RX_DMA_BUFFER_SIZE 128
 #endif
 
 #if UART_ENABLE_IT == 1
@@ -51,6 +51,9 @@ extern "C" {
 
 // 电机驱动模块是否是主机
 #define BRUSHED_MOTOR_IS_MASTER 0
+
+// 电机模块数据存储地址
+#define MOTOR_MODULE_STROAGE_DATA_ADDR 0x00
 
 #ifdef __cplusplus
 }
