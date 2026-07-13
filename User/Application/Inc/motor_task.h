@@ -30,6 +30,7 @@ typedef struct {
 void MotorTask_Init();
 PIDInstance *MotorTask_GetPID();
 BrushedMotorRunner_t *MotorTask_GetRunner();
+MotorTask_t *MotorTask_GetTask();
 
 #ifdef __cplusplus
 }

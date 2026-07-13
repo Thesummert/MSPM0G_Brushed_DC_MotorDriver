@@ -89,33 +89,8 @@ static void MotorTask_Run() {
   }
 }
 
-static _Bool CAN_Decode(MotorTask_t *self, uint8_t *data) {
-  if (self == NULL) {
-    RTT_Print(0, "Null pointer error in motor task can decode \r\n");
-    return false;
-  }
-  // 确定电机方向
-  int8_t direction = (data[0] & (1 << 5)) ? -1 : 1;
-  uint8_t status = (data[0] & (0b11 << 6)) >> 6;
-  switch (status) {
-  case 0b00:
-    motor_task.status = MOTOR_IDLE;
-    break;
-  case 0b01:
-    motor_task.status = MOTOR_RUN;
-    break;
-  case 0b11:
-    motor_task.status = MOTOR_BREAK;
-    break;
-  default:
-    break;
-  }
-  motor_task.set_omega =
-      direction * ((float)(data[1] << 8 | data[2]) / 10000.0f);
-  return true;
-}
-
 PIDInstance *MotorTask_GetPID() { return &motor_task.motor.omega_pid; }
 
 BrushedMotorRunner_t *MotorTask_GetRunner() { return &motor_task.motor; }
 
+MotorTask_t *MotorTask_GetTask() { return &motor_task; }

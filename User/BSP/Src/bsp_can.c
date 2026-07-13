@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "comm_task.h"
 
 const uint8_t CAN_DLC_TO_LENGTH[16] = {
     [0] = 0, // EF_CAN_DLC_NUM0
@@ -32,6 +33,11 @@ static _Bool StartRec(EF_BSP_CAN_t *self);
 static _Bool DecodeData(uint32_t id, uint32_t dlc, const uint8_t *data,
                         uint32_t xtd, uint32_t rtr) {
   /*按照具体应用填写 暂时先不做抽象处理*/
+    // 匹配ID
+    // TODO 将滤波器初始化为仅接收对应ID
+    if (id == CommTask_GetID()) {
+        CommTask_CAN_Decode(data, CAN_DLC_TO_LENGTH[dlc]);
+    }
   return true;
 }
 

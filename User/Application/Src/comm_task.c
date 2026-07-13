@@ -30,7 +30,14 @@ static void CommTask_Uart_SetValue(CommTask_t *self);
 
 void CommTask() {
   while (1) {
-    vTaskDelay(1000);
+    CommTask_Uart_SetValue(&comm_task);
+
+    // 如果是CAN模式 则开始发送数据
+    if (comm_task.comm_mode == 1) {
+      CommTask_CAN_Trasnmit(&comm_task);
+    }
+    CommTask_ReloadCounter(&comm_task);
+    vTaskDelay(1); // 通信任务运行周期 1Khz
   }
 }
 
@@ -165,3 +172,39 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
     }
   }
 }
+
+void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
+  // CAN需要接收达到3次后切换到CAN通信模式
+  if (comm_task.can_counter < 3) {
+    ++comm_task.can_counter;
+  } else {
+    comm_task.comm_mode = 1;
+  }
+  if (comm_task.comm_mode == 1) {
+    if (data_len != 3) {
+      // 不符合规范的消息内容
+      return;
+    }
+    MotorTask_t *motor_task = MotorTask_GetTask();
+    // 确定电机方向
+    int8_t direction = (data[0] & (1 << 5)) ? -1 : 1;
+    uint8_t status = (data[0] & (0b11 << 6)) >> 6;
+    switch (status) {
+    case 0b00:
+      motor_task->status = MOTOR_IDLE;
+      break;
+    case 0b01:
+      motor_task->status = MOTOR_RUN;
+      break;
+    case 0b11:
+      motor_task->status = MOTOR_BREAK;
+      break;
+    default:
+      break;
+    }
+    motor_task->set_omega =
+        direction * ((float)(data[1] << 8 | data[2]) / 10000.0f);
+  }
+}
+
+uint16_t CommTask_GetID() { return comm_task.manager.stroage.storge.slave_id; }
