@@ -46,8 +46,9 @@ static _Bool Encode(MotorUart_Slave2Master_t *self, uint16_t master_id,
     return false;
   }
   // uint16_t send_len = data_len + 5 + 2 + 2;
-  uint16_t send_len = data_len + 9;
-  if (send_len > UART_TX_DMA_BUFFER_SIZE) {
+  self->send_len = data_len + 9;
+
+  if (self->send_len > UART_TX_DMA_BUFFER_SIZE) {
     RTT_Print(0, "Out of buffer size \r\n");
     return false;
   }
@@ -64,7 +65,7 @@ static _Bool Encode(MotorUart_Slave2Master_t *self, uint16_t master_id,
   if (data != NULL) {
     memcpy(self->buffer + 7, data, data_len);
   }
-  Append_CRC16_Check_Sum(self->buffer, send_len);
+  Append_CRC16_Check_Sum(self->buffer, self->send_len);
   return true;
 }
 

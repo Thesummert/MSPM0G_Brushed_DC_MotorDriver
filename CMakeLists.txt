@@ -65,6 +65,7 @@ set(Device_Src
 set(Algorithm_Src
     ./User/Algorithm/Src/crc_ref.c
     ./User/Algorithm/Src/pid.c
+    ./User/Algorithm/Src/abstract_queue.c
 )
 
 #Application 

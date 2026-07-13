@@ -381,6 +381,23 @@ static _Bool TransmitDMA(EF_Usart_Typedef *self, uint8_t *buff, uint16_t len) {
                       ? (self->mspm0g.dma.tx_buffer)
                       : buff; // 设定地址 当输入地址为空指针时 设定为内置地址
   EF_DMA_Typedef *dma = &self->mspm0g.dma.tx_dma;
+  bool isTXIdle =
+      (!DL_DMA_isChannelEnabled(dma->mspm0g.dma,
+                                dma->mspm0g.channel)) && // DMA搬运到FIFO完成
+      (DL_UART_isTXFIFOEmpty(self->mspm0g.uart));        // TX FIFO已空
+  uint16_t wait_time = 10;
+  while (isTXIdle == false && wait_time > 0) {
+    // 等待50ms 确认之前的发送完成
+    isTXIdle =
+        (!DL_DMA_isChannelEnabled(dma->mspm0g.dma,
+                                  dma->mspm0g.channel)) && // DMA搬运到FIFO完成
+        (DL_UART_isTXFIFOEmpty(self->mspm0g.uart));        // TX FIFO已空
+    Delay_us(5000);
+    wait_time--;
+  }
+  if (isTXIdle == false) {
+      return false;
+  }
   if (!dma->Set(dma, addr, (uint8_t *)&self->mspm0g.uart->TXDATA, len)) {
     return false;
   }
@@ -677,6 +694,8 @@ void EF_BSP_Uart0_IDLE_RxCallback(void *param) {
   uart0.mspm0g.it.rx_idle.rec_size =
       uart0.mspm0g.dma.rx_size_set -
       dma->mspm0g.dma->DMACHAN[dma->mspm0g.channel].DMASZ;
-  DL_UART_clearInterruptStatus(uart0.mspm0g.uart, DL_UART_IIDX_RX_TIMEOUT_ERROR); // 清除标志位
-  uart0.ReceiveDMA_IDLE(&uart0, uart0.mspm0g.dma.rx_buffer_ptr, uart0.mspm0g.dma.rx_size_set); // 默认再次开启DMA
+  DL_UART_clearInterruptStatus(uart0.mspm0g.uart,
+                               DL_UART_IIDX_RX_TIMEOUT_ERROR); // 清除标志位
+  uart0.ReceiveDMA_IDLE(&uart0, uart0.mspm0g.dma.rx_buffer_ptr,
+                        uart0.mspm0g.dma.rx_size_set); // 默认再次开启DMA
 }

@@ -15,9 +15,11 @@ extern "C" {
 #include "motor_can_control.h"
 #include "motor_module_manager.h"
 #include "motor_uart_control.h"
+#include "abstract_queue.h"
 
 typedef struct {
   EF_BSP_CAN_t *ecan;
+  EF_Algorithm_Queue_t uart_queue;
   EF_Usart_Typedef *euart;
   MotorCan_Slave2Master_t can_message;
   EF_Device_Comm_LED_t *status_led;

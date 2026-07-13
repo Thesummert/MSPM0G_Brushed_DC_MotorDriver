@@ -47,19 +47,21 @@ typedef union {
   uint8_t datas[3];
 } MotorUartCtrl_u;
 
-typedef struct  MotorUart_Slave2Master_t{
+typedef struct MotorUart_Slave2Master_t {
   uint8_t buffer[UART_TX_DMA_BUFFER_SIZE]; // 串口DMA传输使用到的缓冲区
+  uint16_t send_len;                       // 数据发送长度
 
-_Bool (*Encode)(struct MotorUart_Slave2Master_t *self, uint16_t master_id,
-             uint16_t slave_id, uint8_t cmd, uint8_t *data,
-             uint16_t data_len);
+  _Bool (*Encode)(struct MotorUart_Slave2Master_t *self, uint16_t master_id,
+                  uint16_t slave_id, uint8_t cmd, uint8_t *data,
+                  uint16_t data_len);
 } MotorUart_Slave2Master_t;
 
 _Bool MotorUartSlave_Init(MotorUart_Slave2Master_t *self);
 
 _Bool MotorUartSlave_Decode(uint8_t *data_input, uint16_t *master_id,
-                    uint16_t *slave_id, uint8_t *cmd, uint16_t *data_len,
-                    uint8_t *data_out, uint16_t message_len);
+                            uint16_t *slave_id, uint8_t *cmd,
+                            uint16_t *data_len, uint8_t *data_out,
+                            uint16_t message_len);
 
 #ifdef __cplusplus
 }

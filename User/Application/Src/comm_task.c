@@ -1,10 +1,12 @@
 #include "comm_task.h"
+#include "abstract_queue.h"
 #include "mcu_config.h"
 #include "mcu_device.h"
 #include "motor_can_control.h"
 #include "motor_module_manager.h"
 #include "motor_runner.h"
 #include "motor_task.h"
+#include "motor_uart_control.h"
 #include "pid.h"
 #include "qei_encoder.h"
 #include <stdbool.h>
@@ -18,10 +20,13 @@
 CommTask_t comm_task;
 
 /*频率定时器装载值*/
-const uint16_t COUNTER_RELOAD[4] = {100, 200, 500, 1000};
+static const uint16_t COUNTER_RELOAD[4] = {100, 200, 500, 1000};
+/*串口缓冲区 最后两位为数据长度*/
+static uint8_t uart_buffer[4 * (UART_TX_DMA_BUFFER_SIZE + 2)];
 
 static void CommTask_CAN_Trasnmit(CommTask_t *self);
-static void CommTask_CAN_ReloadCounter(CommTask_t *self);
+static void CommTask_ReloadCounter(CommTask_t *self);
+static void CommTask_Uart_SetValue(CommTask_t *self);
 
 void CommTask() {
   while (1) {
@@ -36,6 +41,8 @@ void CommTask_Init() {
   comm_task.status_led = EFDevice_Get_LED();
   comm_task.cmd_key = EFDevice_Get_Key();
   comm_task.motor = MotorTask_GetRunner();
+  EF_Algorithm_Queue_Init(&comm_task.uart_queue, 4, UART_TX_DMA_BUFFER_SIZE + 2,
+                          uart_buffer);
   MotorManager_Init(&comm_task.manager, EFDevice_Get_EEPROM());
   // 读取eeprom中的数据
   // 总共尝试读取三次
@@ -85,16 +92,76 @@ void CommTask_Init() {
 
 static void CommTask_CAN_Trasnmit(CommTask_t *self) {
   if (self->counter == self->reload_counter) {
-    // self->can_message.Encoder(&self->can_message, status,
-    // self->motor->motor->omega_output); // 返回输出轴角速度
+
+    uint8_t status = 0;
+    self->can_message.Encoder(
+        &self->can_message, status,
+        self->motor->motor->omega_output); // 返回输出轴角速度
     self->ecan->TransmitFIFO(self->ecan, self->can_message.master_id,
                              self->can_message.feedback.datas, 3, false);
   }
 }
 
-static void CommTask_CAN_ReloadCounter(CommTask_t *self) {
+static void CommTask_ReloadCounter(CommTask_t *self) {
   /*单独运行 防止两种发送方式相互干扰*/
   if (self->counter == self->reload_counter) {
     self->counter = 0;
+  }
+}
+
+static void CommTask_Uart_SetValue(CommTask_t *self) {
+  /*串口数据解码*/
+  if (self->uart_queue.length > 0) {
+    // 如果队列里面有数据 则解码数据
+    uint16_t master_id;
+    uint16_t slave_id;
+    uint8_t cmd;
+    uint16_t data_len;
+    uint8_t data_out[UART_TX_DMA_BUFFER_SIZE];
+
+    // 直接读取缓冲区 加快处理速度
+    MotorUartSlave_Decode(
+        self->uart_queue.buffer_ptr +
+            self->uart_queue.pointer_index * self->uart_queue.item_size,
+        &master_id, &slave_id, &cmd, &data_len, data_out,
+        self->uart_queue.pointer_index * self->uart_queue.item_size +
+            UART_TX_DMA_BUFFER_SIZE + 2);
+    self->uart_queue.Drop(&self->uart_queue, NULL);
+    // 只处理本机数据
+    // @TODO 只有在ID相同的时候才进行Decode处理
+    if (slave_id == self->manager.stroage.storge.slave_id) {
+      switch (cmd) {
+
+      case MOTOR_CMD_SET:
+        /*将电机模块切换到设定模式*/
+        break;
+      case MOTOR_CMD_DRIVE:
+        /*电机驱动命令 设定电机驱动数值*/
+        break;
+      case MOTOR_CMD_TRANSMIT:
+        /*数据传输命令 搭配MOTOR_CMD_SET进行数值设定传输*/
+      // case MOTOR_CMD_FEEDBACK:
+      //     /*反馈报文 电机模块不会接收到这个命令*/
+      case MOTOR_CMD_ACK:
+        /*回复报文 当电机设定数值成功的时候会主动发送*/
+        /*同时也是主机检测从机是否在线的时候发送的报文*/
+        // 只发送回复报文 不带其他数据
+        self->uart_message.Encode(
+            &self->uart_message, self->manager.stroage.storge.master_id,
+            self->manager.stroage.storge.slave_id, MOTOR_CMD_ACK, NULL, 0);
+
+        // 串口数据发送
+        uint16_t try_time = 0;
+        while (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                                         self->uart_message.send_len) &&
+               try_time < 10) {
+          // 尝试10次设定发送
+          try_time++;
+        }
+        break;
+      default:
+        break;
+      }
+    }
   }
 }
