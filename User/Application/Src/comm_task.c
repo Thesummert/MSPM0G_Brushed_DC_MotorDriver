@@ -1,5 +1,6 @@
 #include "comm_task.h"
 #include "abstract_queue.h"
+#include "bsp_mspm0g_usart.h"
 #include "crc_ref.h"
 #include "mcu_config.h"
 #include "mcu_device.h"
@@ -11,6 +12,7 @@
 #include "pid.h"
 #include "qei_encoder.h"
 #include "ti/devices/msp/m0p/mspm0g350x.h"
+#include <reent.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -44,9 +46,8 @@ void CommTask() {
     // 如果是CAN模式 则开始发送数据
     if (comm_task.comm_mode == 1) {
       CommTask_CAN_Trasnmit(&comm_task);
-    }
-    else {
-    CommTask_Uart_Trasnmit(&comm_task);
+    } else {
+      CommTask_Uart_Trasnmit(&comm_task);
     }
     CommTask_ReloadCounter(&comm_task);
     vTaskDelay(1); // 通信任务运行周期 1Khz
@@ -211,7 +212,7 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
       case MOTOR_CMD_SET:
         /*将电机模块切换到设定模式*/
         self->set_value_mode = true; // 切换到进入设定数值模式
-        
+
         break;
       case MOTOR_CMD_DRIVE:
         /*电机驱动命令 设定电机驱动数值*/
@@ -364,3 +365,26 @@ void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len) {
  * @return 当前配置中的从机ID。
  */
 uint16_t CommTask_GetID() { return comm_task.manager.stroage.storge.slave_id; }
+
+void CommTask_UartRXCallback(void *param) {
+  /*串口回调函数*/
+  EF_Usart_Typedef *uart0 = comm_task.euart;
+  EF_DMA_Typedef *dma = &uart0->mspm0g.dma.rx_dma;
+
+  uart0->mspm0g.it.rx_idle.rec_size =
+      uart0->mspm0g.dma.rx_size_set -
+      dma->mspm0g.dma->DMACHAN[dma->mspm0g.channel].DMASZ;
+
+  DL_UART_clearInterruptStatus(uart0->mspm0g.uart,
+                               DL_UART_IIDX_RX_TIMEOUT_ERROR); // 清除标志位
+  // 添加到队列中 并且添加数据长度
+  comm_task.uart_queue.Add(&comm_task.uart_queue,
+                           uart0->mspm0g.dma.rx_buffer_ptr);
+  comm_task.uart_queue.buffer_ptr[UART_RX_DMA_BUFFER_SIZE - 2] =
+      uart0->mspm0g.it.rx_idle.rec_size >> 8;
+  comm_task.uart_queue.buffer_ptr[UART_RX_DMA_BUFFER_SIZE - 1] =
+      uart0->mspm0g.it.rx_idle.rec_size & 0xFF;
+
+  uart0->ReceiveDMA_IDLE(uart0, uart0->mspm0g.dma.rx_buffer_ptr,
+                         uart0->mspm0g.dma.rx_size_set); // 默认再次开启DMA
+}

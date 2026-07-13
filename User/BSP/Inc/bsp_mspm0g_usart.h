@@ -52,7 +52,7 @@ _Bool (*ReceiveDMA_IDLE)(struct EF_Usart_Typedef *self, uint8_t *buff,
     struct {
 #if UART_ENABLE_DMA == 1
       // DMA缓冲区 由于MSPM0G无需处理内存区域 直接在此处定义
-      uint8_t rx_buffer[UART_RX_DMA_BUFFER_SIZE];
+      uint8_t rx_buffer[UART_RX_DMA_BUFFER_SIZE + 2]; // 这里加2 防止之后的溢出
       uint8_t tx_buffer[UART_TX_DMA_BUFFER_SIZE];
       uint8_t rx_size_set; // DMA RX设定大小
       uint8_t tx_size_set; // DMA TX设定大小

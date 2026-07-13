@@ -39,6 +39,7 @@ typedef struct {
 void CommTask_Init();
 void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len);
 uint16_t CommTask_GetID();
+void CommTask_UartRXCallback(void *param);
 
 #ifdef __cplusplus
 }

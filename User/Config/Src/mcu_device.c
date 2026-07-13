@@ -9,6 +9,7 @@
 #include "bsp_mspm0g_usart.h"
 #include "comm_key.h"
 #include "comm_led.h"
+#include "comm_task.h"
 #include "detect_task.h"
 #include "mcu_config.h"
 #include "qei_encoder.h"
@@ -33,7 +34,6 @@ static EF_Device_Comm_LED_t status_led;
 static EF_Device_CommKey_t control_key;
 static EF_QEI_Encoder_t qei_encoder;
 
-
 _Bool EasyFrameDevice_Init() {
   EasyFrameSysTime_Init(4); // 初始化系统定时
   EasyFrame_GPIO_Init(&key_gpio, LED_PORT_PORT, KEY_PORT_KEY_PIN_PIN);
@@ -52,8 +52,9 @@ _Bool EasyFrameDevice_Init() {
                             UART_0_DMA_RX_Callback, UART_0_DMA_TX_Callback,
                             EF_BSP_Uart0_DMA_RxCallback,
                             EF_BSP_Uart0_DMA_RxCallback, DMA_INT_IRQn, 2);
-  EF_BSP_Uart_Init_IDLE_IT(&uart, UART0_IDLE_RX_CALLBACK,
-                           EF_BSP_Uart0_IDLE_RxCallback);
+  EF_BSP_Uart_Init_IDLE_IT(
+      &uart, UART0_IDLE_RX_CALLBACK,
+      CommTask_UartRXCallback); // 此处使用通信任务设计的回调函数
   // 初始化CAN通信
   EF_BSP_CAN_Init(&can, MCAN0_INST, false, false);
   EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 2, MCAN0_RXFIFO_0_Callback,
@@ -70,7 +71,9 @@ _Bool EasyFrameDevice_Init() {
   // 初始化电机
   EF_BrushedMotor_Init(&motor, BRUSHED_MOTOR_TYPE1, false,
                        &motor_control_tim_pwm);
-  EF_Device_QEI_Encoder_Init(&qei_encoder, &motor_encoder_tim_qei, MOTOR_MODULE_DEFAULT_PPR, MOTOR_MODULE_DEFAULT_MULTIPLY, MOTOR_MODULE_DEFAULT_RADIO);
+  EF_Device_QEI_Encoder_Init(
+      &qei_encoder, &motor_encoder_tim_qei, MOTOR_MODULE_DEFAULT_PPR,
+      MOTOR_MODULE_DEFAULT_MULTIPLY, MOTOR_MODULE_DEFAULT_RADIO);
   EF_BrushedMotor_InitQEI(&motor, &qei_encoder);
 
   return true;
