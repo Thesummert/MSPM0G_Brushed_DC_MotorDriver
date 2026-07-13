@@ -6,6 +6,11 @@
 #include <string.h>
 #include "queue.h"
 
+/*Task*/
+#include "motor_task.h"
+#include "comm_task.h"
+#include "detect_task.h"
+
 __WEAK void MotorTask();
 __WEAK void CommTask();
 __WEAK void DetectTask();
@@ -13,14 +18,24 @@ __WEAK void DetectTask();
 static QueueHandle_t queues[FREE_RTOS_MAX_QUEUE];
 
 /**
- * @brief 初始化FreeRTOS任务。
+ * @brief 初始化FreeRTOS系统。
  */
-void FreeRTOS_Init() {
+void FreeRTOS_InitOS() {
     memset(queues, 0, FREE_RTOS_MAX_QUEUE * sizeof(QueueHandle_t));
     xTaskCreate(MotorTask, "Motor_Task", 256, NULL, 2, NULL);
     xTaskCreate(CommTask, "Comm_Task", 128, NULL, 2, NULL);
     xTaskCreate(DetectTask, "Detect_Task", 128, NULL, 2, NULL);
 
+}
+
+/**
+ * @brief 初始化FreeRTOS任务。
+ */
+void FreeRTOS_InitTask()
+{
+    MotorTask_Init();
+    CommTask_Init();
+    // DetectTask的初始化是在device中初始化 因为将软件看门狗当成设备处理的
 }
 
 /**

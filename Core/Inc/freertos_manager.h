@@ -11,7 +11,8 @@ extern "C" {
 #include "task.h"
 #include "queue.h"
 
-void FreeRTOS_Init();
+void FreeRTOS_InitOS();
+void FreeRTOS_InitTask();
 void FreeRTOS_Run();
 
 QueueHandle_t FreeRTOS_GetQueue(uint8_t index);

@@ -30,6 +30,18 @@ static _Bool TransmitFIFO(EF_BSP_CAN_t *self, uint32_t id, uint8_t *data,
                           uint16_t len, _Bool is_ext_id);
 
 static _Bool StartRec(EF_BSP_CAN_t *self);
+
+/**
+ * @brief 根据CAN ID解码接收到的数据并分发到通信任务。
+ * @param id  接收到的CAN ID。
+ * @param dlc 数据长度码。
+ * @param data 接收数据缓冲区指针。
+ * @param xtd  帧类型标志，0表示标准帧，1表示扩展帧。
+ * @param rtr  帧类型标志，0表示数据帧，1表示远程帧。
+ * @return 始终返回true。
+ *
+ * 当前实现仅在ID匹配本机从机ID时，将有效数据长度转换后转交给通信任务处理。
+ */
 static _Bool DecodeData(uint32_t id, uint32_t dlc, const uint8_t *data,
                         uint32_t xtd, uint32_t rtr) {
   /*按照具体应用填写 暂时先不做抽象处理*/
@@ -41,6 +53,14 @@ static _Bool DecodeData(uint32_t id, uint32_t dlc, const uint8_t *data,
   return true;
 }
 
+/**
+ * @brief 初始化CAN外设抽象实例。
+ * @param self           CAN抽象实例指针。
+ * @param can            MCAN外设寄存器基地址。
+ * @param is_fdcan       是否启用CAN FD。
+ * @param is_baud_switch 是否启用波特率切换。
+ * @return 初始化成功返回true，失败返回false。
+ */
 _Bool EF_BSP_CAN_Init(EF_BSP_CAN_t *self, MCAN_Regs *can, _Bool is_fdcan,
                       _Bool is_baud_switch) {
   if (self == NULL) {
@@ -59,6 +79,15 @@ _Bool EF_BSP_CAN_Init(EF_BSP_CAN_t *self, MCAN_Regs *can, _Bool is_fdcan,
   return true;
 }
 
+/**
+ * @brief 初始化CAN接收中断配置。
+ * @param self     CAN抽象实例指针。
+ * @param irq      CAN中断号。
+ * @param priority 中断优先级。
+ * @param rx0      FIFO0接收中断类型。
+ * @param rx1      FIFO1接收中断类型。
+ * @return 初始化成功返回true，失败返回false。
+ */
 _Bool EF_BSP_CAN_InitIT(EF_BSP_CAN_t *self, IRQn_Type irq, uint32_t priority,
                         EF_IT_e rx0, EF_IT_e rx1) {
   if (self == NULL) {
@@ -74,6 +103,17 @@ _Bool EF_BSP_CAN_InitIT(EF_BSP_CAN_t *self, IRQn_Type irq, uint32_t priority,
   return true;
 }
 
+/**
+ * @brief 通过CAN FIFO发送一帧数据。
+ * @param self      CAN抽象实例指针。
+ * @param id        待发送CAN ID。
+ * @param data      待发送数据缓冲区指针。
+ * @param len       待发送数据长度。
+ * @param is_ext_id 是否使用扩展ID。
+ * @return 发送请求配置成功返回true，失败返回false。
+ *
+ * 当数据长度大于8字节时，会按CAN FD的DLC映射规则选择不小于实际长度的DLC值。
+ */
 static _Bool TransmitFIFO(EF_BSP_CAN_t *self, uint32_t id, uint8_t *data,
                           uint16_t len, _Bool is_ext_id) {
   if (self == NULL) {
@@ -118,6 +158,11 @@ static _Bool TransmitFIFO(EF_BSP_CAN_t *self, uint32_t id, uint8_t *data,
   return true;
 }
 
+/**
+ * @brief 启动CAN接收中断。
+ * @param self CAN抽象实例指针。
+ * @return 启动成功返回true，失败返回false。
+ */
 static _Bool StartRec(EF_BSP_CAN_t *self) {
 
   if (self == NULL) {
@@ -133,6 +178,12 @@ static _Bool StartRec(EF_BSP_CAN_t *self) {
   return true;
 }
 
+/**
+ * @brief CAN FIFO接收中断回调。
+ * @param can_ptr 中断回调传入的上下文指针。
+ *
+ * 该回调会读取FIFO中的所有待处理报文，解析ID和数据长度后交给解码函数处理，并逐帧释放接收确认。
+ */
 static void RX_Callback(void *can_ptr) {
   EF_CAN_IT_CallbackPass_t *pass = (EF_CAN_IT_CallbackPass_t *)can_ptr;
   MCAN_Regs *mcan = (MCAN_Regs *)pass->can;

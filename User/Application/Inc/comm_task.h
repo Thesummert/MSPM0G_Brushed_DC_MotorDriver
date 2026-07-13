@@ -18,20 +18,21 @@ extern "C" {
 #include "motor_uart_control.h"
 
 typedef struct {
-  EF_BSP_CAN_t *ecan;
-  EF_Algorithm_Queue_t uart_queue;
-  EF_Usart_Typedef *euart;
-  MotorCan_Slave2Master_t can_message;
-  EF_Device_Comm_LED_t *status_led;
-  EF_Device_CommKey_t *cmd_key;
-  MotorManager_t manager;
-  MotorUart_Slave2Master_t uart_message;
-  MotorModuleFreq_e send_freq;
-  BrushedMotorRunner_t *motor;
-  uint8_t can_counter;     // can接收计数器
-  _Bool comm_mode;         // 通信模式 0为uart 1为can
-  uint16_t counter;        // 计数器 用来设定发送频率
-  uint16_t reload_counter; // 重置频率计数器Load
+  EF_BSP_CAN_t *ecan;                    // CAN实例
+  EF_Algorithm_Queue_t uart_queue;       // 串口数据队列
+  EF_Usart_Typedef *euart;               // UART实例
+  MotorCan_Slave2Master_t can_message;   // CAN消息编码器
+  MotorUart_Slave2Master_t uart_message; // 串口消息编码器
+  EF_Device_Comm_LED_t *status_led;      // 状态指示灯
+  EF_Device_CommKey_t *cmd_key;          // 控制键
+  MotorManager_t manager;                // 管理器
+  MotorModuleFreq_e send_freq;           // 数据发送频率
+  BrushedMotorRunner_t *motor;           // 电机runner指针
+  uint8_t can_counter;                   // can接收计数器
+  _Bool comm_mode;                       // 通信模式 0为uart 1为can
+  uint16_t counter;                      // 计数器 用来设定发送频率
+  uint16_t reload_counter;               // 重置频率计数器Load
+  _Bool set_value_mode; // 设定数值模式 将会强制使电机进入到无力状态
 
 } CommTask_t;
 

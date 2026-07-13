@@ -1,5 +1,6 @@
 #include "comm_task.h"
 #include "abstract_queue.h"
+#include "crc_ref.h"
 #include "mcu_config.h"
 #include "mcu_device.h"
 #include "motor_can_control.h"
@@ -9,6 +10,7 @@
 #include "motor_uart_control.h"
 #include "pid.h"
 #include "qei_encoder.h"
+#include "ti/devices/msp/m0p/mspm0g350x.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -27,7 +29,14 @@ static uint8_t uart_buffer[4 * (UART_TX_DMA_BUFFER_SIZE + 2)];
 static void CommTask_CAN_Trasnmit(CommTask_t *self);
 static void CommTask_ReloadCounter(CommTask_t *self);
 static void CommTask_Uart_SetValue(CommTask_t *self);
+static void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len);
+static void CommTask_Uart_Trasnmit(CommTask_t *self);
 
+/**
+ * @brief 通信任务主循环。
+ *
+ * 周期性处理UART设定数据，在CAN通信模式下发送电机反馈，并维护发送频率计数器。
+ */
 void CommTask() {
   while (1) {
     CommTask_Uart_SetValue(&comm_task);
@@ -36,11 +45,21 @@ void CommTask() {
     if (comm_task.comm_mode == 1) {
       CommTask_CAN_Trasnmit(&comm_task);
     }
+    else {
+    CommTask_Uart_Trasnmit(&comm_task);
+    }
     CommTask_ReloadCounter(&comm_task);
     vTaskDelay(1); // 通信任务运行周期 1Khz
   }
 }
 
+/**
+ * @brief 初始化通信任务上下文及通信相关模块。
+ *
+ * 绑定CAN、UART、LED、按键和电机运行器实例，初始化UART发送队列和电机参数管理器。
+ * 若EEPROM参数读取成功，则恢复CAN
+ * ID、PID参数、电机编码器参数和反馈频率；否则使用默认CAN ID和默认反馈频率。
+ */
 void CommTask_Init() {
   memset(&comm_task, 0, sizeof(CommTask_t));
   comm_task.ecan = EFDevice_Get_CAN();
@@ -97,6 +116,13 @@ void CommTask_Init() {
   }
 }
 
+/**
+ * @brief 按设定频率发送CAN反馈报文。
+ * @param self 通信任务对象指针。
+ *
+ * 当计数器达到重装载值时，将当前电机输出轴角速度编码为反馈报文并发送到主机CAN
+ * ID。
+ */
 static void CommTask_CAN_Trasnmit(CommTask_t *self) {
   if (self->counter == self->reload_counter) {
 
@@ -109,6 +135,42 @@ static void CommTask_CAN_Trasnmit(CommTask_t *self) {
   }
 }
 
+/**
+ * @brief 按设定频率发送UART反馈报文。
+ * @param self 通信任务对象指针。
+ *
+ * 在计数器达到重装载值时，将当前电机输出轴角速度封装为UART反馈报文并通过DMA发送。
+ * 报文格式为：状态字节、速度高字节、速度低字节。
+ */
+static void CommTask_Uart_Trasnmit(CommTask_t *self) {
+  if (self->counter == self->reload_counter) {
+
+    uint8_t status = 0;
+    uint8_t datas[3];
+    uint16_t value;
+
+    uint8_t direction =
+        (self->motor->motor->omega_output < 0.0f) ? true : false;
+    status = status | (direction << 7);
+    value = (uint16_t)(self->motor->motor->omega_output * 100.0f);
+    datas[0] = status;
+    datas[1] = value >> 8;
+    datas[2] = value & 0xFF;
+    self->uart_message.Encode(
+        &self->uart_message, self->manager.stroage.storge.master_id,
+        self->manager.stroage.storge.slave_id, MOTOR_CMD_FEEDBACK, datas, 3);
+    // @TODO 添加串口速率与发送频率是否达标判断
+    self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                             self->uart_message.send_len);
+  }
+}
+
+/**
+ * @brief 根据发送频率重置通信计数器。
+ * @param self 通信任务对象指针。
+ *
+ * 该计数器独立维护，用于避免不同发送方式之间的频率控制相互干扰。
+ */
 static void CommTask_ReloadCounter(CommTask_t *self) {
   /*单独运行 防止两种发送方式相互干扰*/
   if (self->counter == self->reload_counter) {
@@ -116,6 +178,13 @@ static void CommTask_ReloadCounter(CommTask_t *self) {
   }
 }
 
+/**
+ * @brief 处理UART接收队列中的电机控制报文。
+ * @param self 通信任务对象指针。
+ *
+ * 从UART队列中取出一帧数据并解码，仅处理从机ID匹配本机的报文；当前主要响应ACK命令并通过UART
+ * DMA回传确认报文。
+ */
 static void CommTask_Uart_SetValue(CommTask_t *self) {
   /*串口数据解码*/
   if (self->uart_queue.length > 0) {
@@ -141,12 +210,55 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
 
       case MOTOR_CMD_SET:
         /*将电机模块切换到设定模式*/
+        self->set_value_mode = true; // 切换到进入设定数值模式
+        
         break;
       case MOTOR_CMD_DRIVE:
         /*电机驱动命令 设定电机驱动数值*/
+        CommTask_Uart_SetSpeed(data_out, data_len);
         break;
       case MOTOR_CMD_TRANSMIT:
         /*数据传输命令 搭配MOTOR_CMD_SET进行数值设定传输*/
+        if (self->set_value_mode == false) {
+          break;
+        }
+        if (Verify_CRC16_Check_Sum(data_out, data_len)) {
+          // 如果校验通过 则拷贝数据到管理器中 并且写入到EEPROM中
+          memcpy(self->manager.stroage.datas, data_out, data_len);
+          self->uart_message.Encode(
+              &self->uart_message, self->manager.stroage.storge.master_id,
+              self->manager.stroage.storge.slave_id, MOTOR_CMD_ACK, NULL, 0);
+          if (!self->manager.Write(&self->manager)) {
+            // 发送失败消息
+            self->uart_message.Encode(
+                &self->uart_message, self->manager.stroage.storge.master_id,
+                self->manager.stroage.storge.slave_id, MOTOR_CMD_FAIL, NULL, 0);
+            self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                                     self->uart_message.send_len);
+            self->set_value_mode = false;
+          }
+
+          // 串口数据发送
+          uint16_t try_time = 0;
+          while (
+              (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                                         self->uart_message.send_len)) &&
+              try_time < 10) {
+            // 尝试10次设定发送
+            try_time++;
+          }
+          // 成功后将直接进行单片机重启
+          // 如果最后确认成功没有发送成功 无需在意
+          NVIC_SystemReset();
+        } else {
+          self->uart_message.Encode(
+              &self->uart_message, self->manager.stroage.storge.master_id,
+              self->manager.stroage.storge.slave_id, MOTOR_CMD_FAIL, NULL, 0);
+          self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                                   self->uart_message.send_len);
+          self->set_value_mode = false;
+        }
+
       // case MOTOR_CMD_FEEDBACK:
       //     /*反馈报文 电机模块不会接收到这个命令*/
       case MOTOR_CMD_ACK:
@@ -173,6 +285,13 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
   }
 }
 
+/**
+ * @brief 解码CAN控制报文并更新电机任务状态。
+ * @param data     CAN数据缓冲区指针。
+ * @param data_len CAN数据长度。
+ *
+ * CAN接收计数达到阈值后切换到CAN通信模式；在CAN模式下解析3字节控制报文，更新电机运行状态和目标角速度。
+ */
 void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
   // CAN需要接收达到3次后切换到CAN通信模式
   if (comm_task.can_counter < 3) {
@@ -207,4 +326,41 @@ void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
   }
 }
 
+/**
+ * @brief 解码UART驱动报文并更新电机任务状态。
+ * @param data     UART数据缓冲区指针。
+ * @param data_len UART数据长度。
+ *
+ * 解析3字节电机控制报文，更新电机运行状态和目标角速度。
+ * 数据长度不符合协议时直接返回。
+ */
+void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len) {
+  if (data_len != 3) {
+    return;
+  }
+  MotorTask_t *motor_task = MotorTask_GetTask();
+  // 确定电机方向
+  int8_t direction = (data[0] & (1 << 5)) ? -1 : 1;
+  uint8_t status = (data[0] & (0b11 << 6)) >> 6;
+  switch (status) {
+  case 0b00:
+    motor_task->status = MOTOR_IDLE;
+    break;
+  case 0b01:
+    motor_task->status = MOTOR_RUN;
+    break;
+  case 0b11:
+    motor_task->status = MOTOR_BREAK;
+    break;
+  default:
+    break;
+  }
+  motor_task->set_omega =
+      direction * ((float)(data[1] << 8 | data[2]) / 10000.0f);
+}
+
+/**
+ * @brief 获取当前电机模块从机ID。
+ * @return 当前配置中的从机ID。
+ */
 uint16_t CommTask_GetID() { return comm_task.manager.stroage.storge.slave_id; }

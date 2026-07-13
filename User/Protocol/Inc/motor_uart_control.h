@@ -36,6 +36,7 @@ typedef enum {
   MOTOR_CMD_TRANSMIT,     // 传输数据命令
   MOTOR_CMD_FEEDBACK,     // 回报数据命令
   MOTOR_CMD_ACK = 0x10,   // 电机回复报文
+  MOTOR_CMD_FAIL,         // 设定失败
 } MotorUartCtrlCMD_e;
 
 /*电机控制联合*/

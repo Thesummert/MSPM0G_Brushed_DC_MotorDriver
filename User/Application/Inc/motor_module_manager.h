@@ -25,6 +25,9 @@ typedef enum {
   MOTOR_MODULE_FREQ_1000,
 } MotorModuleFreq_e;
 
+// 关闭字节对齐
+#pragma pack(1)
+/*模块存储数据结构体*/
 typedef struct {
   uint16_t slave_id; // 从机ID
   uint16_t master_id; // 主机ID
@@ -40,12 +43,12 @@ typedef struct {
   float radio;
   uint8_t multiplier;
   uint32_t ppr;
-  uint8_t freq;
   // 回报率
-
+  uint8_t freq;
   // CRC
   uint16_t crc;
 } MotorModuleStroageData_t;
+#pragma pack()
 
 /*电机存储数据联合体*/
 typedef union {
