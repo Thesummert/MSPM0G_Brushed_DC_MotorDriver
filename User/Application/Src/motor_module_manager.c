@@ -65,6 +65,7 @@ static _Bool Read(MotorManager_t *self, uint8_t try_time) {
     } else {
       return true;
     }
+    times++;
   } while (flag == false && times < try_time);
   return false;
 }

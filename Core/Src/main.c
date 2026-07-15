@@ -11,11 +11,8 @@
 
 // Test
 #include "comm_key.h"
+#include "at24cxx.h"
 
-uint64_t delta;
-uint64_t time_line;
-EF_CommKetOutput_e out;
-uint8_t touch;
 
 int main(void) {
   SYSCFG_DL_init();
@@ -25,7 +22,5 @@ int main(void) {
   FreeRTOS_Run();
 
   while (1) {
-      delta = EasyFrameSysTime_GetTimeline_us()- time_line; 
-      time_line= EasyFrameSysTime_GetTimeline_us();
   }
 }

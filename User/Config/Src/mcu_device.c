@@ -4,6 +4,7 @@
 #include "bsp_can.h"
 #include "bsp_mspm0g_dma.h"
 #include "bsp_mspm0g_gpio.h"
+#include "bsp_mspm0g_i2c.h"
 #include "bsp_mspm0g_it.h"
 #include "bsp_mspm0g_tim_base.h"
 #include "bsp_mspm0g_usart.h"
@@ -61,8 +62,15 @@ _Bool EasyFrameDevice_Init() {
                     MCAN0_RXFIFO_1_Callback);
 
   // 初始化eeprom
+  EasyFrame_GPIO_Typedef_t scl, sda;
+  EasyFrame_GPIO_Init(&scl, GPIOA, DL_GPIO_PIN_0);
+  EasyFrame_GPIO_Init(&sda, GPIOA, DL_GPIO_PIN_1);
+  EasyFrame_GPIO_InitIOMux(&sda, GPIO_I2C_0_IOMUX_SDA);
+  EasyFrame_GPIO_InitIOMux(&scl, GPIO_I2C_0_IOMUX_SCL);
+
   EF_Device_AT24CXX_Init(&at24, EF_AT24_TYPE_C2, 0b1010000, I2C_0_INST,
                          80000000);
+  EasyFrame_I2C_InitGPIO(&at24.i2c, sda, scl);
 
   EF_BSP_TimerPWM_Init(&motor_control_tim_pwm, &motor_control_tim, 2);
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
