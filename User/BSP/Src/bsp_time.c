@@ -457,7 +457,10 @@ static _Bool getDelta(EF_BSP_TimerQEI_t *self, int32_t *delta) {
   if (self->is_inited == false) {
     return false;
   }
-  *delta = self->base_load - DL_Timer_getLoadValue(self->etim->mspm0g.tim);
-  DL_Timer_setLoadValue(self->etim->mspm0g.tim, self->base_load);
+  // *delta = self->base_load -
+  // DL_Timer_getCounterLoadControl(self->etim->mspm0g.tim);
+  *delta = self->base_load - self->etim->mspm0g.tim->COUNTERREGS.CTR;
+  self->etim->mspm0g.tim->COUNTERREGS.CTR = self->base_load;
+  // DL_Timer_setLoadValue(self->etim->mspm0g.tim, self->base_load);
   return true;
 }

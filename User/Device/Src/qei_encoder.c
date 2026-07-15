@@ -10,6 +10,20 @@
 
 
 static _Bool getSpeed(EF_QEI_Encoder_t *self, float dt, float *omega_rotor, float *omega_output);
+/**
+ * @brief       启动QEI编码器计数
+ * @param[in]   self  编码器对象指针
+ * @retval      true  启动成功
+ * @retval      false 启动失败(空指针或未初始化)
+ */
+static _Bool Start(EF_QEI_Encoder_t *self );
+/**
+ * @brief       停止QEI编码器计数
+ * @param[in]   self  编码器对象指针
+ * @retval      true  停止成功
+ * @retval      false 停止失败(空指针或未初始化)
+ */
+static _Bool Stop(EF_QEI_Encoder_t *self );
 
 /**
  * @brief       初始化QEI编码器设备
@@ -39,6 +53,8 @@ _Bool EF_Device_QEI_Encoder_Init(EF_QEI_Encoder_t *self, EF_BSP_TimerQEI_t *qei,
     self->inv_radio = 1.0f / radio;
 
     self->getSpeed = getSpeed;
+    self->Start = Start;
+    self->Stop = Stop;
 
     self->is_inited = true;
 
@@ -81,4 +97,28 @@ static _Bool getSpeed(EF_QEI_Encoder_t *self, float dt, float *omega_rotor, floa
     }
 
     return true;
+}
+
+static _Bool Start(EF_QEI_Encoder_t *self )
+{
+    if (self == NULL) {
+        RTT_Print(0, "Null pointer error in qei start \r\n");
+        return false;
+    }
+    if (self->is_inited == false) {
+        return false;
+    }
+    return self->qei->etim->StartCounter(self->qei->etim);
+}
+
+static _Bool Stop(EF_QEI_Encoder_t *self )
+{
+    if (self == NULL) {
+        RTT_Print(0, "Null pointer error in qei start \r\n");
+        return false;
+    }
+    if (self->is_inited == false) {
+        return false;
+    }
+    return self->qei->etim->StopCounter(self->qei->etim);
 }

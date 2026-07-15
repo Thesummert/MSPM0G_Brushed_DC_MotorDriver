@@ -27,6 +27,9 @@ typedef struct EF_QEI_Encoder_t {
 
   _Bool (*getSpeed)(struct EF_QEI_Encoder_t *self, float dt, float *omega_rotor,
                     float *omega_output);
+
+  _Bool (*Start)(struct EF_QEI_Encoder_t *self);
+  _Bool (*Stop)(struct EF_QEI_Encoder_t *self);
 } EF_QEI_Encoder_t;
 
 _Bool EF_Device_QEI_Encoder_Init(EF_QEI_Encoder_t *self, EF_BSP_TimerQEI_t *qei,

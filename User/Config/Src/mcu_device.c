@@ -75,6 +75,7 @@ _Bool EasyFrameDevice_Init() {
   EF_BSP_TimerPWM_Init(&motor_control_tim_pwm, &motor_control_tim, 2);
   EF_BSP_TimerBase_Init(&motor_encoder_tim, QEI_0_INST, 40000000, 0xFF, 0xFFFF);
   EF_BSP_TimerQEI_Init(&motor_encoder_tim_qei, &motor_encoder_tim);
+  motor_encoder_tim_qei.base_load = 0x4000; // 设定装载值
 
   // 初始化电机
   EF_BrushedMotor_Init(&motor, BRUSHED_MOTOR_TYPE1, false,
