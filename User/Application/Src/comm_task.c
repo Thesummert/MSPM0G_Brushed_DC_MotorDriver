@@ -2,7 +2,10 @@
 #include "abstract_queue.h"
 #include "bsp_mspm0g_tim_base.h"
 #include "bsp_mspm0g_usart.h"
+#include "comm_led.h"
 #include "crc_ref.h"
+#include "detect_task.h"
+#include "key_manager.h"
 #include "mcu_config.h"
 #include "mcu_device.h"
 #include "motor_can_control.h"
@@ -17,6 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/select.h>
 
 #define SET_DEFAULT_VALUE 0
 
@@ -31,11 +35,15 @@ static const uint16_t COUNTER_RELOAD[4] = {100, 200, 500, 1000};
 /*串口缓冲区 最后两位为数据长度*/
 static uint8_t uart_buffer[4 * (UART_TX_DMA_BUFFER_SIZE + 2)];
 
+static EF_App_SoftWDT_t comm_task_dwt;
+
 static void CommTask_CAN_Trasnmit(CommTask_t *self);
 static void CommTask_ReloadCounter(CommTask_t *self);
 static void CommTask_Uart_SetValue(CommTask_t *self);
 static void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len);
 static void CommTask_Uart_Trasnmit(CommTask_t *self);
+static void CommTask_LED(CommTask_t *self);
+static void CommTaskWDT_Callback(void *item);
 
 /**
  * @brief 通信任务主循环。
@@ -44,6 +52,8 @@ static void CommTask_Uart_Trasnmit(CommTask_t *self);
  */
 void CommTask() {
   while (1) {
+    EasyFrameSysTime_GetDeltaT(&comm_task.cnt_last);
+    comm_task.time_line = EasyFrameSysTime_GetTimeline_s();
     CommTask_Uart_SetValue(&comm_task);
 
     // 如果是CAN模式 则开始发送数据
@@ -53,6 +63,13 @@ void CommTask() {
       CommTask_Uart_Trasnmit(&comm_task);
     }
     CommTask_ReloadCounter(&comm_task);
+    CommTask_LED(&comm_task);
+
+    if ((comm_task.is_online == false) && (comm_task_dwt.is_online == true)) {
+      comm_task.is_online = true;
+      comm_task.status_led->Set(comm_task.status_led, EF_COMM_LED_TWINKLE, 5,
+                                comm_task.time_line);
+    }
     vTaskDelay(1); // 通信任务运行周期 1Khz
   }
 }
@@ -69,21 +86,25 @@ void CommTask_Init() {
   comm_task.ecan = EFDevice_Get_CAN();
   comm_task.euart = EFDevice_Get_Uart();
   comm_task.status_led = EFDevice_Get_LED();
-  comm_task.cmd_key = EFDevice_Get_Key();
   comm_task.motor = MotorTask_GetRunner();
+  EasyFrameSysTime_GetDeltaT(&comm_task.cnt_last);
   EF_Algorithm_Queue_Init(&comm_task.uart_queue, 4, UART_TX_DMA_BUFFER_SIZE + 2,
                           uart_buffer);
   MotorManager_Init(&comm_task.manager, EFDevice_Get_EEPROM());
   MotorUartSlave_Init(&comm_task.uart_message);
+  EF_App_KeyManager_Init(&comm_task.key_manager, EFDevice_Get_Key());
+  // 设定的时候保持常量
+  comm_task.status_led->Set(comm_task.status_led, EF_COMM_LED_ALWAYS_ON, 0, 0);
+  comm_task.status_led->Show(comm_task.status_led, 1);
   // 读取eeprom中的数据
   // 总共尝试读取三次
   // @TODO 将设定默认值和初始化合并
   if (SET_DEFAULT_VALUE) {
-      while (!comm_task.manager.SetDefaultValue(&comm_task.manager)) {
-          // 如果写入失败 则重置I2C重试
-          comm_task.manager.eeprom->i2c.Reset(&comm_task.manager.eeprom->i2c, 1);
-          EasyFrameSysTime_Delay(0.02);
-      }
+    while (!comm_task.manager.SetDefaultValue(&comm_task.manager)) {
+      // 如果写入失败 则重置I2C重试
+      comm_task.manager.eeprom->i2c.Reset(&comm_task.manager.eeprom->i2c, 1);
+      EasyFrameSysTime_Delay(0.02);
+    }
     BrushedMotorRunner_t *runner = MotorTask_GetRunner();
     PIDInstance *pid = MotorTask_GetPID();
     MotorCanSlave_Init(&comm_task.can_message,
@@ -162,6 +183,14 @@ void CommTask_Init() {
     comm_task.reload_counter = COUNTER_RELOAD[0];
   }
   comm_task.ecan->StartRec(comm_task.ecan);
+  EasyFrameSysTime_GetDeltaT(&comm_task.cnt_last);
+  comm_task.time_line = EasyFrameSysTime_GetTimeline_s();
+  comm_task.status_led->Set(comm_task.status_led, EF_COMM_LED_TWINKLE, 5,
+                            comm_task.time_line);
+  uint8_t id[] = "comm";
+  EF_SoftWDT_Init(&comm_task_dwt, id, 5, 50, CommTaskWDT_Callback, NULL);
+  EF_App_SoftWDT_Group_Add(EF_App_SoftWDT_Group_Get(0), &comm_task_dwt);
+  comm_task.is_online = true;
 }
 
 /**
@@ -256,6 +285,7 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
     // 只处理本机数据
     // @TODO 只有在ID相同的时候才进行Decode处理
     if (slave_id == self->manager.stroage.storge.slave_id) {
+      comm_task_dwt.Feed(&comm_task_dwt);
       switch (cmd) {
 
       case MOTOR_CMD_SET:
@@ -350,6 +380,7 @@ void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
     comm_task.comm_mode = 1;
   }
   if (comm_task.comm_mode == 1) {
+    comm_task_dwt.Feed(&comm_task_dwt);
     if (data_len != 3) {
       // 不符合规范的消息内容
       return;
@@ -436,4 +467,28 @@ void CommTask_UartRXCallback(void *param) {
 
   uart0->ReceiveDMA_IDLE(uart0, uart0->mspm0g.dma.rx_buffer_ptr,
                          uart0->mspm0g.dma.rx_size_set); // 默认再次开启DMA
+}
+
+static void CommTask_LED(CommTask_t *self) {
+  KeyManagerStatus_e key_status;
+  uint8_t key_touch_time;
+  self->key_manager.GetResult(&self->key_manager, &key_status, &key_touch_time);
+  switch (key_status) {
+
+  case KEY_IDLE:
+  case KEY_SETTING_SLAVE_ID:
+  case KEY_SETTING_MASTER_ID:
+    break;
+  default:
+    self->status_led->Show(self->status_led, comm_task.time_line);
+    break;
+  }
+}
+
+static void CommTaskWDT_Callback(void *item) {
+  if (comm_task.is_online == true) {
+    comm_task.status_led->Set(comm_task.status_led, EF_COMM_LED_TWINKLE, 10,
+                              comm_task.time_line);
+  }
+  comm_task.is_online = false;
 }

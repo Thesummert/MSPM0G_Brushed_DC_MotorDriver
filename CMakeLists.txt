@@ -75,6 +75,7 @@ set(Application_Src
     ./User/Application/Src/detect_task.c
     ./User/Application/Src/motor_runner.c
     ./User/Application/Src/motor_module_manager.c
+    ./User/Application/Src/key_manager.c
 )
 
 # Protocol

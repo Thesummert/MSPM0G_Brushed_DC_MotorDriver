@@ -92,6 +92,7 @@ static _Bool Feed(EF_App_SoftWDT_t *self) {
     return false;
   }
   self->cnt = self->load;
+  self->is_online = true;
   return true;
 }
 

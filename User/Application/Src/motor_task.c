@@ -18,7 +18,6 @@
 #define MOTOR_PID_DEADBAND 0.0f
 #define MOTOR_PID_LPF 0.0f
 
-static EF_App_SoftWDT_t wdt_motor_task;
 static MotorTask_t motor_task;
 static void MotorTask_Run();
 
@@ -48,10 +47,6 @@ void MotorTask_Init() {
                           0.7f);
   motor_task.time_line = EasyFrameSysTime_GetTimeline_s();
 
-  // 初始化看门狗
-  uint8_t id[6] = "motor";
-  EF_SoftWDT_Init(&wdt_motor_task, id, 6, 10, NULL, NULL);
-  EF_App_SoftWDT_Group_Add(EF_App_SoftWDT_Group_Get(0), &wdt_motor_task);
 }
 
 static void MotorTask_Run() {

@@ -13,6 +13,7 @@ extern "C" {
 #include "comm_key.h"
 #include "comm_led.h"
 #include "freertos_manager.h"
+#include "key_manager.h"
 #include "motor_can_control.h"
 #include "motor_module_manager.h"
 #include "motor_uart_control.h"
@@ -23,8 +24,8 @@ typedef struct {
   EF_Usart_Typedef *euart;               // UART实例
   MotorCan_Slave2Master_t can_message;   // CAN消息编码器
   MotorUart_Slave2Master_t uart_message; // 串口消息编码器
+  KeyManager_t key_manager;              // 按键管理器
   EF_Device_Comm_LED_t *status_led;      // 状态指示灯
-  EF_Device_CommKey_t *cmd_key;          // 控制键
   MotorManager_t manager;                // 管理器
   MotorModuleFreq_e send_freq;           // 数据发送频率
   BrushedMotorRunner_t *motor;           // 电机runner指针
@@ -33,6 +34,10 @@ typedef struct {
   uint16_t counter;                      // 计数器 用来设定发送频率
   uint16_t reload_counter;               // 重置频率计数器Load
   _Bool set_value_mode; // 设定数值模式 将会强制使电机进入到无力状态
+
+  float time_line;
+  uint32_t cnt_last;
+  _Bool is_online;
 
 } CommTask_t;
 
