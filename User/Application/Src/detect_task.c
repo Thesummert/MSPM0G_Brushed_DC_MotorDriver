@@ -70,13 +70,17 @@ static _Bool IsOffline(EF_App_SoftWDT_t *self) {
     RTT_Print(0, "Nullpointer error in wdt check offline \r\n");
     return false;
   }
-  if (--self->cnt == 0) {
+  if (self->cnt == 0) {
     RTT_Print(0, "wdt:%s offline! \r\n", self->wdt_name);
+    self->is_online = false;
     if (self->Callback != NULL) {
       self->Callback(self->item);
     }
     return false;
+  } else {
+    --self->cnt;
   }
+
   return true;
 }
 
@@ -168,5 +172,5 @@ EF_App_SoftWDT_Group_t *EF_App_SoftWDT_Group_Get(uint16_t id) {
   default:
     break;
   }
-  return  NULL;
+  return NULL;
 }

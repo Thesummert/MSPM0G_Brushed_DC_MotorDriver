@@ -580,7 +580,7 @@ static void CommTask_KEY(CommTask_t *self) {
 
     case KEY_IDLE:
       break;
-    case KEY_SETTING_SLAVE_ID:
+        case KEY_SETTING_SLAVE_ID:
       if (key_touch_time > 0 && key_touch_time < 20) {
         self->key_set_pending = true;
         self->key_set_status = key_status;
