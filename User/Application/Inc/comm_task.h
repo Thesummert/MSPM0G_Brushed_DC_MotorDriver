@@ -35,10 +35,18 @@ typedef struct {
   uint16_t reload_counter;               // 重置频率计数器Load
   _Bool set_value_mode; // 设定数值模式 将会强制使电机进入到无力状态
 
+
   float time_line;
   uint32_t cnt_last;
   _Bool is_online;
   float dt;
+  float key_set_timer;
+  _Bool key_set_pending;
+  KeyManagerStatus_e key_set_status;
+  uint8_t key_set_touch_time;
+  uint8_t key_led_blink_count;
+  _Bool key_led_on;
+  float key_led_next_time;
 
 } CommTask_t;
 

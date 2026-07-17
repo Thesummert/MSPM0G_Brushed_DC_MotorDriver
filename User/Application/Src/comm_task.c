@@ -23,6 +23,10 @@
 #include <sys/select.h>
 
 #define SET_DEFAULT_VALUE 0
+#define KEY_SET_CONFIRM_TIME 5.0f
+#define KEY_SET_LED_ON_TIME 0.15f
+#define KEY_SET_LED_OFF_TIME 0.15f
+#define KEY_SET_LED_PAUSE_TIME 1.0f
 
 /**
  * @note 通信任务 同时也负责管理控制
@@ -44,6 +48,10 @@ static void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len);
 static void CommTask_Uart_Trasnmit(CommTask_t *self);
 static void CommTask_LED(CommTask_t *self);
 static void CommTask_KEY(CommTask_t *self);
+static void CommTask_KeySetLed(CommTask_t *self, _Bool on);
+static void CommTask_KeySetLedStart(CommTask_t *self);
+static void CommTask_KeySetLedShow(CommTask_t *self);
+static void CommTask_KeySetSave(CommTask_t *self);
 static void CommTaskWDT_Callback(void *item);
 
 /**
@@ -472,27 +480,83 @@ void CommTask_UartRXCallback(void *param) {
 }
 
 static void CommTask_LED(CommTask_t *self) {
-  KeyManagerStatus_e key_status;
-  uint8_t key_touch_time;
-  self->key_manager.GetResult(&self->key_manager, &key_status, &key_touch_time);
-  switch (key_status) {
-  case KEY_IDLE:
-    break;
+  if (self->key_set_pending) {
+    CommTask_KeySetLedShow(self);
+    return;
+  }
+
+  if (self->key_manager.status == KEY_IDLE) {
+    self->status_led->Show(self->status_led, comm_task.time_line);
+  }
+}
+
+static void CommTask_KeySetLed(CommTask_t *self, _Bool on) {
+  if (on) {
+    if (self->status_led->off_voltage == 0) {
+      self->status_led->gpio.SetHigh(&self->status_led->gpio);
+    } else {
+      self->status_led->gpio.SetLow(&self->status_led->gpio);
+    }
+  } else {
+    if (self->status_led->off_voltage == 0) {
+      self->status_led->gpio.SetLow(&self->status_led->gpio);
+    } else {
+      self->status_led->gpio.SetHigh(&self->status_led->gpio);
+    }
+  }
+}
+
+static void CommTask_KeySetLedStart(CommTask_t *self) {
+  self->key_led_blink_count = 0;
+  self->key_led_on = true;
+  self->key_led_next_time = self->time_line + KEY_SET_LED_ON_TIME;
+  CommTask_KeySetLed(self, true);
+}
+
+static void CommTask_KeySetLedShow(CommTask_t *self) {
+  if (self->time_line < self->key_led_next_time) {
+    return;
+  }
+
+  if (self->key_led_on) {
+    self->key_led_on = false;
+    self->key_led_blink_count++;
+    CommTask_KeySetLed(self, false);
+    self->key_led_next_time = self->time_line + KEY_SET_LED_OFF_TIME;
+    return;
+  }
+
+  if (self->key_led_blink_count >= self->key_set_touch_time) {
+    self->key_led_blink_count = 0;
+    self->key_led_next_time = self->time_line + KEY_SET_LED_PAUSE_TIME;
+    return;
+  }
+
+  self->key_led_on = true;
+  CommTask_KeySetLed(self, true);
+  self->key_led_next_time = self->time_line + KEY_SET_LED_ON_TIME;
+}
+
+static void CommTask_KeySetSave(CommTask_t *self) {
+  switch (self->key_set_status) {
   case KEY_SETTING_SLAVE_ID:
     self->manager.stroage.storge.slave_id =
-        MOTOR_MODULE_DEFAULT_ID + key_touch_time;
-    while (!self->manager.Write(&self->manager)) {
-      self->manager.eeprom->i2c.Reset(&self->manager.eeprom->i2c, true);
-      EasyFrameSysTime_Delay(0.2);
-    }
-    NVIC_SystemReset(); // 写入完成 重启单片机
+        MOTOR_MODULE_DEFAULT_ID + self->key_set_touch_time;
     break;
   case KEY_SETTING_MASTER_ID:
+    self->manager.stroage.storge.master_id =
+        MOTOR_MODULE_DEFAULT_MASTER_ID + self->key_set_touch_time;
     break;
   default:
-    self->status_led->Show(self->status_led, comm_task.time_line);
-    break;
+    self->key_set_pending = false;
+    return;
   }
+
+  while (!self->manager.Write(&self->manager)) {
+    self->manager.eeprom->i2c.Reset(&self->manager.eeprom->i2c, true);
+    EasyFrameSysTime_Delay(0.2);
+  }
+  NVIC_SystemReset();
 }
 
 static void CommTaskWDT_Callback(void *item) {
@@ -503,7 +567,41 @@ static void CommTaskWDT_Callback(void *item) {
   comm_task.is_online = false;
 }
 
-static void CommTask_KEY(CommTask_t *self)
-{
-    self->key_manager.Scan(&self->key_manager, self->dt * 1000000.0f);
+static void CommTask_KEY(CommTask_t *self) {
+  self->key_manager.Scan(&self->key_manager, self->dt * 1000000.0f);
+
+  KeyManagerStatus_e key_status;
+  uint8_t key_touch_time;
+
+  if (self->key_manager.GetResult(&self->key_manager, &key_status,
+                                  &key_touch_time)) {
+
+    switch (key_status) {
+
+    case KEY_IDLE:
+      break;
+    case KEY_SETTING_SLAVE_ID:
+      if (key_touch_time > 0 && key_touch_time < 20) {
+        self->key_set_pending = true;
+        self->key_set_status = key_status;
+        self->key_set_touch_time = key_touch_time;
+        self->key_set_timer = self->time_line + KEY_SET_CONFIRM_TIME;
+        CommTask_KeySetLedStart(self);
+      }
+      break;
+    case KEY_SETTING_MASTER_ID:
+      if (key_touch_time > 0 && key_touch_time < 20) {
+        self->key_set_pending = true;
+        self->key_set_status = key_status;
+        self->key_set_touch_time = key_touch_time;
+        self->key_set_timer = self->time_line + KEY_SET_CONFIRM_TIME;
+        CommTask_KeySetLedStart(self);
+      }
+      break;
+    default:
+      break;
+    }
+  } else if (self->key_set_pending && self->time_line >= self->key_set_timer) {
+    CommTask_KeySetSave(self);
+  }
 }

@@ -1,7 +1,6 @@
 #include "key_manager.h"
 #include "comm_key.h"
 #include "mcu_config.h"
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -44,14 +43,13 @@ _Bool Scan(KeyManager_t *self, uint64_t delta_time) {
         // 长按进入设定从机ID 短按三次进入设定主机ID
         if (output == EF_COMM_TOUCH_HOLD) {
           self->status = KEY_SETTING_SLAVE_ID;
-          self->has_answer = true;
-        } else if (output == EF_COMM_TOUCH_TIMES || touch_time == 3) {
+        } else if (output == EF_COMM_TOUCH_TIMES && touch_time == 3) {
           self->status = KEY_SETTING_MASTER_ID;
-          self->has_answer = true;
         }
+        break;
       case KEY_SETTING_SLAVE_ID:
         if (output == EF_COMM_TOUCH_TIMES) {
-          if (fabsf(touch_time) < 20) {
+          if (touch_time < 20) {
             self->output_times = touch_time;
             self->has_answer = true;
             self->output_status = KEY_SETTING_SLAVE_ID;
@@ -62,7 +60,7 @@ _Bool Scan(KeyManager_t *self, uint64_t delta_time) {
         break;
       case KEY_SETTING_MASTER_ID:
         if (output == EF_COMM_TOUCH_TIMES) {
-          if (fabsf(touch_time) < 20) {
+          if (touch_time < 20) {
             self->output_times = touch_time;
             self->has_answer = true;
             self->output_status = KEY_SETTING_MASTER_ID;
@@ -89,8 +87,9 @@ _Bool GetResult(KeyManager_t *self, KeyManagerStatus_e *status,
     *status = self->output_status;
     *times = self->output_times;
     self->has_answer = false;
-    self->status = KEY_IDLE;
+    self->status = self->output_status;
+    return true;
   }
 
-  return true;
+  return false;
 }
