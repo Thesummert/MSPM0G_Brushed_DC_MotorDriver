@@ -7,10 +7,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief 向 EEPROM 写入电机模块配置数据。
+ * @param self 电机管理器实例指针。
+ * @return 写入成功返回 true，失败返回 false。
+ */
 static _Bool Write(MotorManager_t *self);
+/**
+ * @brief 从 EEPROM 读取电机模块配置数据，并进行 CRC 校验。
+ * @param self 电机管理器实例指针。
+ * @param try_time 最大重试次数。
+ * @return 读取并校验成功返回 true，失败返回 false。
+ */
 static _Bool Read(MotorManager_t *self, uint8_t try_time);
+/**
+ * @brief 恢复电机模块配置为默认值并写入 EEPROM。
+ * @param self 电机管理器实例指针。
+ * @return 设置并写入成功返回 true，失败返回 false。
+ */
 static _Bool SetDefaultValue(MotorManager_t *self);
 
+/**
+ * @brief 初始化电机模块管理器。
+ * @param self 电机管理器实例指针。
+ * @param eeprom AT24CXX EEPROM 设备对象指针。
+ * @return 初始化成功返回 true，失败返回 false。
+ */
 _Bool MotorManager_Init(MotorManager_t *self, EF_Device_AT24CXX_t *eeprom) {
   if (self == NULL || eeprom == NULL) {
     RTT_Print(0, "Null pointer error in motor manager init \r\n");
@@ -26,6 +48,11 @@ _Bool MotorManager_Init(MotorManager_t *self, EF_Device_AT24CXX_t *eeprom) {
   return true;
 }
 
+/**
+ * @brief 向 EEPROM 写入电机模块配置数据。
+ * @param self 电机管理器实例指针。
+ * @return 写入成功返回 true，失败返回 false。
+ */
 static _Bool Write(MotorManager_t *self) {
   /*
    * @TODO 添加读取校验
@@ -48,6 +75,12 @@ static _Bool Write(MotorManager_t *self) {
   return false;
 }
 
+/**
+ * @brief 从 EEPROM 读取电机模块配置数据，并进行 CRC 校验。
+ * @param self 电机管理器实例指针。
+ * @param try_time 最大重试次数。
+ * @return 读取并校验成功返回 true，失败返回 false。
+ */
 static _Bool Read(MotorManager_t *self, uint8_t try_time) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in motor manager read \r\n");
@@ -72,6 +105,11 @@ static _Bool Read(MotorManager_t *self, uint8_t try_time) {
   return false;
 }
 
+/**
+ * @brief 恢复电机模块配置为默认值并写入 EEPROM。
+ * @param self 电机管理器实例指针。
+ * @return 设置并写入成功返回 true，失败返回 false。
+ */
 static _Bool SetDefaultValue(MotorManager_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Null pointer error in motor manager read \r\n");
