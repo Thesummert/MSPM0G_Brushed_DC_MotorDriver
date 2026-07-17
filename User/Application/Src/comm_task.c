@@ -47,7 +47,7 @@ void CommTask() {
     if (comm_task.comm_mode == 1) {
       CommTask_CAN_Trasnmit(&comm_task);
     } else {
-      // CommTask_Uart_Trasnmit(&comm_task);
+      CommTask_Uart_Trasnmit(&comm_task);
     }
     CommTask_ReloadCounter(&comm_task);
     vTaskDelay(1); // 通信任务运行周期 1Khz
@@ -71,6 +71,7 @@ void CommTask_Init() {
   EF_Algorithm_Queue_Init(&comm_task.uart_queue, 4, UART_TX_DMA_BUFFER_SIZE + 2,
                           uart_buffer);
   MotorManager_Init(&comm_task.manager, EFDevice_Get_EEPROM());
+  MotorUartSlave_Init(&comm_task.uart_message);
   // 读取eeprom中的数据
   // 总共尝试读取三次
   if (comm_task.manager.Read(&comm_task.manager, 3)) {

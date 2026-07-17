@@ -49,7 +49,7 @@ _Bool EasyFrameDevice_Init() {
   EF_BSP_Uart_Init(&uart, UART_0_INST);
   EF_BSP_Uart_InitIT(&uart, UART0_RX_CALLBACK, NONE_IT_CALLBACK,
                      EF_BSP_Uart0_RxCallback, NULL, UART0_INT_IRQn, 2);
-  EF_BSP_Uart_InitNormalDMA(&uart, DMA, DMA_CH0_CHAN_ID, DMA_CH1_CHAN_ID,
+  EF_BSP_Uart_InitNormalDMA(&uart, DMA, DMA_CH1_CHAN_ID, DMA_CH0_CHAN_ID,
                             UART_0_DMA_RX_Callback, UART_0_DMA_TX_Callback,
                             EF_BSP_Uart0_DMA_RxCallback,
                             EF_BSP_Uart0_DMA_RxCallback, DMA_INT_IRQn, 2);
