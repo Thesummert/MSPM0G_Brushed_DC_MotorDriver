@@ -29,7 +29,7 @@ typedef enum {
 #pragma pack(1)
 /*模块存储数据结构体*/
 typedef struct {
-  uint16_t slave_id; // 从机ID
+  uint16_t slave_id;  // 从机ID
   uint16_t master_id; // 主机ID
   // PID
   float kp;
@@ -64,6 +64,7 @@ typedef struct MotorManager_t {
 
   _Bool (*Write)(struct MotorManager_t *self);
   _Bool (*Read)(struct MotorManager_t *self, uint8_t try_time);
+  _Bool (*SetDefaultValue)(struct MotorManager_t *self);
 } MotorManager_t;
 
 _Bool MotorManager_Init(MotorManager_t *self, EF_Device_AT24CXX_t *eeprom);

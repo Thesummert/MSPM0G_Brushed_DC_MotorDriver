@@ -9,6 +9,7 @@
 
 static _Bool Write(MotorManager_t *self);
 static _Bool Read(MotorManager_t *self, uint8_t try_time);
+static _Bool SetDefaultValue(MotorManager_t *self);
 
 _Bool MotorManager_Init(MotorManager_t *self, EF_Device_AT24CXX_t *eeprom) {
   if (self == NULL || eeprom == NULL) {
@@ -20,6 +21,7 @@ _Bool MotorManager_Init(MotorManager_t *self, EF_Device_AT24CXX_t *eeprom) {
 
   self->Write = Write;
   self->Read = Read;
+  self->SetDefaultValue = SetDefaultValue;
 
   return true;
 }
@@ -68,4 +70,19 @@ static _Bool Read(MotorManager_t *self, uint8_t try_time) {
     times++;
   } while (flag == false && times < try_time);
   return false;
+}
+
+static _Bool SetDefaultValue(MotorManager_t *self) {
+  if (self == NULL) {
+    RTT_Print(0, "Null pointer error in motor manager read \r\n");
+    return false;
+  }
+  memset(self->stroage.datas, 0, sizeof(MotorModuleData_u)); // 先清空有的内容
+  self->stroage.storge.master_id = MOTOR_MODULE_DEFAULT_MASTER_ID;
+  self->stroage.storge.slave_id = MOTOR_MODULE_DEFAULT_ID;
+  self->stroage.storge.radio = MOTOR_MODULE_DEFAULT_RADIO;
+  self->stroage.storge.multiplier = MOTOR_MODULE_DEFAULT_MULTIPLY;
+  self->stroage.storge.ppr = MOTOR_MODULE_DEFAULT_PPR;
+  self->stroage.storge.freq = MOTOR_MODULE_FREQ_200;
+  return self->Write(self);
 }

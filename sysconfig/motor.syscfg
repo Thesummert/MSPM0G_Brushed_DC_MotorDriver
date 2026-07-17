@@ -85,6 +85,7 @@ GPIO2.associatedPins[0].internalResistor = "PULL_DOWN";
 GPIO2.associatedPins[0].pin.$assign      = "PB24";
 
 I2C1.$name                     = "I2C_0";
+I2C1.basicEnableController     = true;
 I2C1.peripheral.sdaPin.$assign = "PA0";
 I2C1.peripheral.sclPin.$assign = "PA1";
 I2C1.sdaPinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric3";
