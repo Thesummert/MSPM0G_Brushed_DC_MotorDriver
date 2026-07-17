@@ -54,6 +54,7 @@ _Bool Scan(KeyManager_t *self, uint64_t delta_time) {
           if (fabsf(touch_time) < 20) {
             self->output_times = touch_time;
             self->has_answer = true;
+            self->output_status = KEY_SETTING_SLAVE_ID;
           }
         } else {
           self->status = KEY_IDLE;
@@ -64,6 +65,7 @@ _Bool Scan(KeyManager_t *self, uint64_t delta_time) {
           if (fabsf(touch_time) < 20) {
             self->output_times = touch_time;
             self->has_answer = true;
+            self->output_status = KEY_SETTING_MASTER_ID;
           }
         } else {
           self->status = KEY_IDLE;
@@ -84,7 +86,7 @@ _Bool GetResult(KeyManager_t *self, KeyManagerStatus_e *status,
     return false;
   }
   if (self->has_answer == true) {
-    *status = self->status;
+    *status = self->output_status;
     *times = self->output_times;
     self->has_answer = false;
     self->status = KEY_IDLE;

@@ -20,6 +20,7 @@ typedef struct KeyManager_t {
   _Bool has_answer; // 是否有需要读取的设定值
                     // 需要读取的参数
   uint8_t output_times;
+  KeyManagerStatus_e output_status;
   _Bool is_inited;
 
   _Bool (*Scan)(struct KeyManager_t *self, uint64_t delta_time);

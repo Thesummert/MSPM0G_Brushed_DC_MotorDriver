@@ -43,6 +43,7 @@ static void CommTask_Uart_SetValue(CommTask_t *self);
 static void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len);
 static void CommTask_Uart_Trasnmit(CommTask_t *self);
 static void CommTask_LED(CommTask_t *self);
+static void CommTask_KEY(CommTask_t *self);
 static void CommTaskWDT_Callback(void *item);
 
 /**
@@ -52,7 +53,7 @@ static void CommTaskWDT_Callback(void *item);
  */
 void CommTask() {
   while (1) {
-    EasyFrameSysTime_GetDeltaT(&comm_task.cnt_last);
+    comm_task.dt = EasyFrameSysTime_GetDeltaT(&comm_task.cnt_last);
     comm_task.time_line = EasyFrameSysTime_GetTimeline_s();
     CommTask_Uart_SetValue(&comm_task);
 
@@ -63,6 +64,7 @@ void CommTask() {
       CommTask_Uart_Trasnmit(&comm_task);
     }
     CommTask_ReloadCounter(&comm_task);
+    CommTask_KEY(&comm_task);
     CommTask_LED(&comm_task);
 
     if ((comm_task.is_online == false) && (comm_task_dwt.is_online == true)) {
@@ -474,9 +476,17 @@ static void CommTask_LED(CommTask_t *self) {
   uint8_t key_touch_time;
   self->key_manager.GetResult(&self->key_manager, &key_status, &key_touch_time);
   switch (key_status) {
-
   case KEY_IDLE:
+    break;
   case KEY_SETTING_SLAVE_ID:
+    self->manager.stroage.storge.slave_id =
+        MOTOR_MODULE_DEFAULT_ID + key_touch_time;
+    while (!self->manager.Write(&self->manager)) {
+      self->manager.eeprom->i2c.Reset(&self->manager.eeprom->i2c, true);
+      EasyFrameSysTime_Delay(0.2);
+    }
+    NVIC_SystemReset(); // 写入完成 重启单片机
+    break;
   case KEY_SETTING_MASTER_ID:
     break;
   default:
@@ -491,4 +501,9 @@ static void CommTaskWDT_Callback(void *item) {
                               comm_task.time_line);
   }
   comm_task.is_online = false;
+}
+
+static void CommTask_KEY(CommTask_t *self)
+{
+    self->key_manager.Scan(&self->key_manager, self->dt * 1000000.0f);
 }

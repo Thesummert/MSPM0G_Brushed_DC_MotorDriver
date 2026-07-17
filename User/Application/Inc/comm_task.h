@@ -38,6 +38,7 @@ typedef struct {
   float time_line;
   uint32_t cnt_last;
   _Bool is_online;
+  float dt;
 
 } CommTask_t;
 
