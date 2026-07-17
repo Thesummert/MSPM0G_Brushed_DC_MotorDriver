@@ -14,6 +14,11 @@ static EF_App_SoftWDT_Group_t wdt_group;
  * @brief 离线检测任务入口
  * @note  任务循环以一定周期运行，实际检测逻辑由内部软件看门狗组完成
  */
+/**
+ * @brief 离线检测任务入口。
+ *
+ * 任务循环以固定周期运行，实际检测逻辑由内部软件看门狗组完成。
+ */
 void DetectTask() {
   while (1) {
     wdt_group.Check(&wdt_group);
@@ -21,8 +26,23 @@ void DetectTask() {
   }
 }
 
+/**
+ * @brief 喂单个软件看门狗，重置其超时计数。
+ * @param self 软件看门狗实例指针。
+ * @return true 表示喂狗成功，false 表示参数非法。
+ */
 static _Bool Feed(EF_App_SoftWDT_t *self);
+/**
+ * @brief 检查单个软件看门狗是否超时离线。
+ * @param self 软件看门狗实例指针。
+ * @return true 表示仍在线，false 表示已离线并触发回调。
+ */
 static _Bool IsOffline(EF_App_SoftWDT_t *self);
+/**
+ * @brief 扫描软件看门狗组内所有实例的在线状态。
+ * @param self 软件看门狗组实例指针。
+ * @return true 表示检查完成，false 表示参数非法。
+ */
 static _Bool Check(EF_App_SoftWDT_Group_t *self);
 
 /**
@@ -36,8 +56,18 @@ static _Bool Check(EF_App_SoftWDT_Group_t *self);
  * @retval true    初始化成功
  * @retval false   初始化失败（self 为空）
  */
+/**
+ * @brief 初始化单个软件看门狗实例。
+ * @param self 看门狗实例指针。
+ * @param id 看门狗名称 ID（用于日志输出标识）。
+ * @param id_len ID 长度。
+ * @param load 超时计数值（减到 0 视为离线）。
+ * @param Callback 离线回调函数指针。
+ * @param item 回调参数。
+ * @return true 表示初始化成功，false 表示初始化失败。
+ */
 _Bool EF_SoftWDT_Init(EF_App_SoftWDT_t *self, uint8_t *id, uint8_t id_len,
-                      uint32_t load, void *Callback, void *item) {
+                       uint32_t load, void *Callback, void *item) {
   if (self == NULL) {
     RTT_Print(0, "Nullpointer error in wdt init \r\n");
     return false;
@@ -63,6 +93,11 @@ _Bool EF_SoftWDT_Init(EF_App_SoftWDT_t *self, uint8_t *id, uint8_t id_len,
  * @param[in] self 看门狗实例指针
  * @retval true    仍在在线状态（cnt > 0）
  * @retval false   已离线（cnt == 0），会触发回调
+ */
+/**
+ * @brief 检查单个软件看门狗是否离线。
+ * @param self 软件看门狗实例指针。
+ * @return true 表示仍在线，false 表示已离线并触发回调。
  */
 static _Bool IsOffline(EF_App_SoftWDT_t *self) {
   /*检查是否在线*/
@@ -90,6 +125,11 @@ static _Bool IsOffline(EF_App_SoftWDT_t *self) {
  * @retval true    喂狗成功
  * @retval false   喂狗失败（self 为空）
  */
+/**
+ * @brief 喂单个软件看门狗并恢复在线状态。
+ * @param self 软件看门狗实例指针。
+ * @return true 表示喂狗成功，false 表示参数非法。
+ */
 static _Bool Feed(EF_App_SoftWDT_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Nullpointer error in wdt check feed\r\n");
@@ -105,6 +145,11 @@ static _Bool Feed(EF_App_SoftWDT_t *self) {
  * @param[in] self 看门狗组指针
  * @retval true    初始化成功
  * @retval false   初始化失败（self 为空）
+ */
+/**
+ * @brief 初始化软件看门狗组。
+ * @param self 看门狗组指针。
+ * @return true 表示初始化成功，false 表示初始化失败。
  */
 _Bool EF_App_SoftWDT_Group_Init(EF_App_SoftWDT_Group_t *self) {
   if (self == NULL) {
@@ -122,8 +167,14 @@ _Bool EF_App_SoftWDT_Group_Init(EF_App_SoftWDT_Group_t *self) {
  * @retval true    添加成功
  * @retval false   添加失败（指针为空或组已满）
  */
+/**
+ * @brief 向看门狗组中添加一个看门狗实例。
+ * @param self 看门狗组指针。
+ * @param wdt 待添加的看门狗实例指针。
+ * @return true 表示添加成功，false 表示添加失败。
+ */
 _Bool EF_App_SoftWDT_Group_Add(EF_App_SoftWDT_Group_t *self,
-                               EF_App_SoftWDT_t *wdt) {
+                                EF_App_SoftWDT_t *wdt) {
   if (self == NULL || wdt == NULL) {
     RTT_Print(0, "Nullpointer error in wdt group add \r\n");
     return false;
@@ -144,6 +195,11 @@ _Bool EF_App_SoftWDT_Group_Add(EF_App_SoftWDT_Group_t *self,
  * @retval true    检查完成（即使有离线实例也返回 true）
  * @retval false   检查失败（self 为空）
  */
+/**
+ * @brief 遍历组内所有看门狗，检查各实例的在线状态。
+ * @param self 看门狗组指针。
+ * @return true 表示检查完成，false 表示参数非法。
+ */
 static _Bool Check(EF_App_SoftWDT_Group_t *self) {
   if (self == NULL) {
     RTT_Print(0, "Nullpointer error in wdt group check \r\n");
@@ -163,6 +219,11 @@ static _Bool Check(EF_App_SoftWDT_Group_t *self) {
  * @brief          根据 ID 获取软件看门狗组指针
  * @param[in] id   组 ID（当前仅支持 0）
  * @return         看门狗组指针，无效 ID 返回 NULL
+ */
+/**
+ * @brief 根据 ID 获取软件看门狗组指针。
+ * @param id 组 ID（当前仅支持 0）。
+ * @return 看门狗组指针，无效 ID 返回 NULL。
  */
 EF_App_SoftWDT_Group_t *EF_App_SoftWDT_Group_Get(uint16_t id) {
   switch (id) {

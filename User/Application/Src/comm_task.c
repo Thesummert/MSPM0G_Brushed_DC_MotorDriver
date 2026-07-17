@@ -91,6 +91,11 @@ void CommTask() {
  * 若EEPROM参数读取成功，则恢复CAN
  * ID、PID参数、电机编码器参数和反馈频率；否则使用默认CAN ID和默认反馈频率。
  */
+/**
+ * @brief 初始化通信任务所需的外设、协议编解码器和运行参数。
+ *
+ * 该函数会恢复 EEPROM 中保存的模块配置；若读取失败，则使用默认主从机 ID 和默认通信频率。
+ */
 void CommTask_Init() {
   memset(&comm_task, 0, sizeof(CommTask_t));
   comm_task.ecan = EFDevice_Get_CAN();
@@ -210,6 +215,10 @@ void CommTask_Init() {
  * 当计数器达到重装载值时，将当前电机输出轴角速度编码为反馈报文并发送到主机CAN
  * ID。
  */
+/**
+ * @brief 按 CAN 模式发送电机反馈报文。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_CAN_Trasnmit(CommTask_t *self) {
   if (self->counter == self->reload_counter) {
 
@@ -228,6 +237,10 @@ static void CommTask_CAN_Trasnmit(CommTask_t *self) {
  *
  * 在计数器达到重装载值时，将当前电机输出轴角速度封装为UART反馈报文并通过DMA发送。
  * 报文格式为：状态字节、速度高字节、速度低字节。
+ */
+/**
+ * @brief 按 UART 模式发送电机反馈报文。
+ * @param self 通信任务对象指针。
  */
 static void CommTask_Uart_Trasnmit(CommTask_t *self) {
   if (self->counter == self->reload_counter) {
@@ -258,6 +271,10 @@ static void CommTask_Uart_Trasnmit(CommTask_t *self) {
  *
  * 该计数器独立维护，用于避免不同发送方式之间的频率控制相互干扰。
  */
+/**
+ * @brief 根据设定频率刷新通信发送计数器。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_ReloadCounter(CommTask_t *self) {
   /*单独运行 防止两种发送方式相互干扰*/
   if (self->counter == self->reload_counter) {
@@ -273,6 +290,10 @@ static void CommTask_ReloadCounter(CommTask_t *self) {
  *
  * 从UART队列中取出一帧数据并解码，仅处理从机ID匹配本机的报文；当前主要响应ACK命令并通过UART
  * DMA回传确认报文。
+ */
+/**
+ * @brief 处理 UART 接收队列中的控制报文。
+ * @param self 通信任务对象指针。
  */
 static void CommTask_Uart_SetValue(CommTask_t *self) {
   /*串口数据解码*/
@@ -382,6 +403,11 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
  *
  * CAN接收计数达到阈值后切换到CAN通信模式；在CAN模式下解析3字节控制报文，更新电机运行状态和目标角速度。
  */
+/**
+ * @brief 解码 CAN 控制报文并更新电机任务状态。
+ * @param data CAN 报文数据区。
+ * @param data_len CAN 报文长度。
+ */
 void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
   // CAN需要接收达到3次后切换到CAN通信模式
   if (comm_task.can_counter < 3) {
@@ -425,6 +451,11 @@ void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
  * 解析3字节电机控制报文，更新电机运行状态和目标角速度。
  * 数据长度不符合协议时直接返回。
  */
+/**
+ * @brief 解码 UART 驱动报文并更新电机任务状态。
+ * @param data UART 报文数据区。
+ * @param data_len UART 报文长度。
+ */
 void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len) {
   if (data_len != 3) {
     return;
@@ -454,8 +485,16 @@ void CommTask_Uart_SetSpeed(const uint8_t *data, uint8_t data_len) {
  * @brief 获取当前电机模块从机ID。
  * @return 当前配置中的从机ID。
  */
+/**
+ * @brief 获取当前模块的从机 ID。
+ * @return 当前 EEPROM 中保存的从机 ID。
+ */
 uint16_t CommTask_GetID() { return comm_task.manager.stroage.storge.slave_id; }
 
+/**
+ * @brief UART 接收完成回调，用于将收到的数据帧放入解析队列。
+ * @param param 回调参数，当前未使用。
+ */
 void CommTask_UartRXCallback(void *param) {
   /*串口回调函数*/
   EF_Usart_Typedef *uart0 = comm_task.euart;
@@ -479,6 +518,10 @@ void CommTask_UartRXCallback(void *param) {
                          uart0->mspm0g.dma.rx_size_set); // 默认再次开启DMA
 }
 
+/**
+ * @brief 刷新状态指示灯，并在按键设置阶段让出控制权给专用闪烁逻辑。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_LED(CommTask_t *self) {
   if (self->key_set_pending) {
     CommTask_KeySetLedShow(self);
@@ -490,6 +533,11 @@ static void CommTask_LED(CommTask_t *self) {
   }
 }
 
+/**
+ * @brief 控制按键设置阶段的 LED 亮灭。
+ * @param self 通信任务对象指针。
+ * @param on true 表示点亮，false 表示熄灭。
+ */
 static void CommTask_KeySetLed(CommTask_t *self, _Bool on) {
   if (on) {
     if (self->status_led->off_voltage == 0) {
@@ -506,6 +554,10 @@ static void CommTask_KeySetLed(CommTask_t *self, _Bool on) {
   }
 }
 
+/**
+ * @brief 初始化按键设置阶段的 LED 闪烁序列。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_KeySetLedStart(CommTask_t *self) {
   self->key_led_blink_count = 0;
   self->key_led_on = true;
@@ -513,6 +565,10 @@ static void CommTask_KeySetLedStart(CommTask_t *self) {
   CommTask_KeySetLed(self, true);
 }
 
+/**
+ * @brief 按当前按键次数循环驱动 LED 闪烁。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_KeySetLedShow(CommTask_t *self) {
   if (self->time_line < self->key_led_next_time) {
     return;
@@ -537,6 +593,10 @@ static void CommTask_KeySetLedShow(CommTask_t *self) {
   self->key_led_next_time = self->time_line + KEY_SET_LED_ON_TIME;
 }
 
+/**
+ * @brief 将待确认的主从机 ID 写入 EEPROM 并重启系统。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_KeySetSave(CommTask_t *self) {
   switch (self->key_set_status) {
   case KEY_SETTING_SLAVE_ID:
@@ -559,6 +619,10 @@ static void CommTask_KeySetSave(CommTask_t *self) {
   NVIC_SystemReset();
 }
 
+/**
+ * @brief 软件看门狗超时回调，用于标记通信离线并触发离线闪烁。
+ * @param item 回调参数，当前未使用。
+ */
 static void CommTaskWDT_Callback(void *item) {
   if (comm_task.is_online == true) {
     comm_task.status_led->Set(comm_task.status_led, EF_COMM_LED_TWINKLE, 10,
@@ -567,6 +631,10 @@ static void CommTaskWDT_Callback(void *item) {
   comm_task.is_online = false;
 }
 
+/**
+ * @brief 轮询按键输入并处理 ID 设定状态。
+ * @param self 通信任务对象指针。
+ */
 static void CommTask_KEY(CommTask_t *self) {
   self->key_manager.Scan(&self->key_manager, self->dt * 1000000.0f);
 

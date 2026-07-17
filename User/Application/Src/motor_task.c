@@ -21,6 +21,11 @@
 static MotorTask_t motor_task;
 static void MotorTask_Run();
 
+/**
+ * @brief 电机任务主循环。
+ *
+ * 该任务以 1KHz 运行，持续驱动电机状态机和 PID 控制。
+ */
 void MotorTask() {
   /*任务以1KHZ运行*/
   while (1) {
@@ -29,6 +34,9 @@ void MotorTask() {
   }
 }
 
+/**
+ * @brief 初始化电机任务上下文和电机运行器。
+ */
 void MotorTask_Init() {
   // PID初始化结构体
   PID_Init_Config_s pid_init = {
@@ -49,6 +57,11 @@ void MotorTask_Init() {
 
 }
 
+/**
+ * @brief 执行一次电机控制状态更新。
+ *
+ * 根据当前电机状态切换空闲、运行和刹车逻辑，并更新运行时长。
+ */
 static void MotorTask_Run() {
   BrushedMotorRunner_t *motor = &motor_task.motor;
   // 由于LED控制需要传入时间线 这里多加了点浮点计算任务
@@ -84,8 +97,20 @@ static void MotorTask_Run() {
   }
 }
 
+/**
+ * @brief 获取电机 PID 实例指针。
+ * @return 电机 PID 实例指针。
+ */
 PIDInstance *MotorTask_GetPID() { return &motor_task.motor.omega_pid; }
 
+/**
+ * @brief 获取电机运行器实例指针。
+ * @return 电机运行器实例指针。
+ */
 BrushedMotorRunner_t *MotorTask_GetRunner() { return &motor_task.motor; }
 
+/**
+ * @brief 获取电机任务上下文指针。
+ * @return 电机任务上下文指针。
+ */
 MotorTask_t *MotorTask_GetTask() { return &motor_task; }
