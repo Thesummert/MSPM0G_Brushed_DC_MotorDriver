@@ -529,7 +529,7 @@ static const DL_MCAN_InitParams gMCAN0InitParams= {
     .darEnable         = false,
     .wkupReqEnable     = false,
     .autoWkupEnable    = false,
-    .emulationEnable   = false,
+    .emulationEnable   = true,
     .tdcEnable         = false,
     .wdcPreload        = 255,
 
@@ -553,10 +553,10 @@ static const DL_MCAN_MsgRAMConfigParams gMCAN0MsgRAMConfigParams ={
     .txStartAddr          = MCAN0_INST_MCAN_TX_BUFF_START_ADDR,
     /* Number of Dedicated Transmit Buffers. */
     .txBufNum             = MCAN0_INST_MCAN_TX_BUFF_SIZE,
-    .txFIFOSize           = 6,
+    .txFIFOSize           = 2,
     /* Tx Buffer Element Size. */
     .txBufMode            = 0,
-    .txBufElemSize        = DL_MCAN_ELEM_SIZE_8BYTES,
+    .txBufElemSize        = DL_MCAN_ELEM_SIZE_64BYTES,
     /* Tx Event FIFO Start Address. */
     .txEventFIFOStartAddr = MCAN0_INST_MCAN_TX_EVENT_START_ADDR,
     /* Event FIFO Size. */
@@ -581,22 +581,22 @@ static const DL_MCAN_MsgRAMConfigParams gMCAN0MsgRAMConfigParams ={
     /* Rx Buffer Start Address. */
     .rxBufStartAddr       = MCAN0_INST_MCAN_RX_BUFF_START_ADDR,
     /* Rx Buffer Element Size. */
-    .rxBufElemSize        = DL_MCAN_ELEM_SIZE_8BYTES,
+    .rxBufElemSize        = DL_MCAN_ELEM_SIZE_64BYTES,
     /* Rx FIFO0 Element Size. */
-    .rxFIFO0ElemSize      = DL_MCAN_ELEM_SIZE_8BYTES,
+    .rxFIFO0ElemSize      = DL_MCAN_ELEM_SIZE_64BYTES,
     /* Rx FIFO1 Element Size. */
-    .rxFIFO1ElemSize      = DL_MCAN_ELEM_SIZE_8BYTES,
+    .rxFIFO1ElemSize      = DL_MCAN_ELEM_SIZE_64BYTES,
 };
 
 static const DL_MCAN_StdMsgIDFilterElement gMCAN0StdFiltelem = {
     .sfec = 0x1,
-    .sft  = 0x2,
+    .sft  = 0x3,
     .sfid1 = 0,
     .sfid2 = 0,
 };
 
 static const DL_MCAN_ExtMsgIDFilterElement gMCAN0ExtFiltelem = {
-    .efec = 0x1,
+    .efec = 0x2,
     .eft  = 0x3,
     .efid1 = 0,
     .efid2 = 0,
@@ -671,9 +671,9 @@ SYSCONFIG_WEAK void SYSCFG_DL_MCAN0_init(void) {
     /* Enable MCAN mopdule Interrupts */
     DL_MCAN_enableIntr(MCAN0_INST, MCAN0_INST_MCAN_INTERRUPTS, 1U);
 
-    DL_MCAN_selectIntrLine(MCAN0_INST, DL_MCAN_INTERRUPT_RF0N|DL_MCAN_INTERRUPT_RF1N, DL_MCAN_INTR_LINE_NUM_0);
+    DL_MCAN_selectIntrLine(MCAN0_INST, DL_MCAN_INTERRUPT_RF0F|DL_MCAN_INTERRUPT_RF0N|DL_MCAN_INTERRUPT_RF0W, DL_MCAN_INTR_LINE_NUM_0);
     DL_MCAN_enableIntrLine(MCAN0_INST, DL_MCAN_INTR_LINE_NUM_0, 1U);
-    DL_MCAN_selectIntrLine(MCAN0_INST, DL_MCAN_INTERRUPT_RF0N|DL_MCAN_INTERRUPT_RF1N, DL_MCAN_INTR_LINE_NUM_1);
+    DL_MCAN_selectIntrLine(MCAN0_INST, DL_MCAN_INTERRUPT_RF1F|DL_MCAN_INTERRUPT_RF1N|DL_MCAN_INTERRUPT_RF1W, DL_MCAN_INTR_LINE_NUM_1);
     DL_MCAN_enableIntrLine(MCAN0_INST, DL_MCAN_INTR_LINE_NUM_1, 1U);
 
     /* Enable MSPM0 MCAN interrupt */

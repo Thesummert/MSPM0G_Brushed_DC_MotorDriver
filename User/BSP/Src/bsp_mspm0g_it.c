@@ -3,6 +3,7 @@
 #include "mcu_config.h"
 #include "ti/devices/msp/m0p/mspm0g350x.h"
 #include "ti/driverlib/dl_dma.h"
+#include "ti/driverlib/dl_gpio.h"
 #include "ti/driverlib/dl_mcan.h"
 #include "ti/driverlib/dl_uart.h"
 #include <stdbool.h>
@@ -10,6 +11,7 @@
 #include <string.h>
 
 #include "bsp_can.h"
+#include "ti_msp_dl_config.h"
 
 static void CallbackRunner(EF_IT_Group_Typedef *self, EF_IT_e type,
                            void *param);
@@ -158,18 +160,36 @@ void DMA_IRQHandler(void) {
 void CANFD0_IRQHandler(void) {
   EF_CAN_IT_CallbackPass_t pass;
   uint32_t can_it;
+  uint32_t pending;
   pass.can = MCAN0_INST;
-  switch (DL_MCAN_getPendingInterrupt(MCAN0_INST)) {
+  can_it = DL_MCAN_getIntrStatus(MCAN0_INST);
+  pending = DL_MCAN_getPendingInterrupt(MCAN0_INST);
+  switch (pending) {
   case DL_MCAN_IIDX_LINE0:
   case DL_MCAN_IIDX_LINE1:
-    can_it = DL_MCAN_getIntrStatus(MCAN0_INST);
-    if ((can_it & DL_MCAN_INTERRUPT_RF0N)) {
+    if ((can_it & DL_MCAN_INTERRUPT_ARA)) {
+      DL_MCAN_clearIntrStatus(MCAN0_INST, DL_MCAN_INTERRUPT_ARA,
+                              DL_MCAN_INTR_SRC_MCAN_LINE_0);
+      DL_MCAN_clearIntrStatus(MCAN0_INST, DL_MCAN_INTERRUPT_ARA,
+                              DL_MCAN_INTR_SRC_MCAN_LINE_1);
+    }
+    if ((can_it & (DL_MCAN_INTERRUPT_RF0N | DL_MCAN_INTERRUPT_RF0F |
+                   DL_MCAN_INTERRUPT_RF0W))) {
       pass.canid = 0;
       CallbackRunner(&can_it_group, MCAN0_RXFIFO_0_Callback, &pass);
+      DL_MCAN_clearIntrStatus(MCAN0_INST,
+                              (DL_MCAN_INTERRUPT_RF0N | DL_MCAN_INTERRUPT_RF0F |
+                               DL_MCAN_INTERRUPT_RF0W),
+                              DL_MCAN_INTR_SRC_MCAN_LINE_0);
     }
-    if ((can_it & DL_MCAN_INTERRUPT_RF1N)) {
+    if ((can_it & (DL_MCAN_INTERRUPT_RF1N | DL_MCAN_INTERRUPT_RF1F |
+                   DL_MCAN_INTERRUPT_RF1W))) {
       pass.canid = 1;
       CallbackRunner(&can_it_group, MCAN0_RXFIFO_1_Callback, &pass);
+      DL_MCAN_clearIntrStatus(MCAN0_INST,
+                              (DL_MCAN_INTERRUPT_RF1N | DL_MCAN_INTERRUPT_RF1F |
+                               DL_MCAN_INTERRUPT_RF1W),
+                              DL_MCAN_INTR_SRC_MCAN_LINE_1);
     }
 
     break;

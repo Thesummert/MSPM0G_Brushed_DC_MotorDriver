@@ -58,8 +58,9 @@ _Bool EasyFrameDevice_Init() {
       CommTask_UartRXCallback); // 此处使用通信任务设计的回调函数
   // 初始化CAN通信
   EF_BSP_CAN_Init(&can, MCAN0_INST, false, false);
-  EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 2, MCAN0_RXFIFO_0_Callback,
+  EF_BSP_CAN_InitIT(&can, CANFD0_INT_IRQn, 3, MCAN0_RXFIFO_0_Callback,
                     MCAN0_RXFIFO_1_Callback);
+  can.max_dlc_len = 8; // 最大长度8位
 
   // 初始化eeprom
   EasyFrame_GPIO_Typedef_t scl, sda;

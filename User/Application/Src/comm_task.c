@@ -47,7 +47,7 @@ void CommTask() {
     if (comm_task.comm_mode == 1) {
       CommTask_CAN_Trasnmit(&comm_task);
     } else {
-      CommTask_Uart_Trasnmit(&comm_task);
+      // CommTask_Uart_Trasnmit(&comm_task);
     }
     CommTask_ReloadCounter(&comm_task);
     vTaskDelay(1); // 通信任务运行周期 1Khz
@@ -115,6 +115,7 @@ void CommTask_Init() {
                        MOTOR_MODULE_DEFAULT_ID);
     comm_task.reload_counter = COUNTER_RELOAD[0];
   }
+  comm_task.ecan->StartRec(comm_task.ecan);
 }
 
 /**
@@ -176,6 +177,9 @@ static void CommTask_ReloadCounter(CommTask_t *self) {
   /*单独运行 防止两种发送方式相互干扰*/
   if (self->counter == self->reload_counter) {
     self->counter = 0;
+  }
+  else {
+      ++self->counter;
   }
 }
 

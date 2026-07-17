@@ -10,9 +10,8 @@
 #include <stdlib.h>
 
 // Test
-#include "comm_key.h"
 #include "at24cxx.h"
-
+#include "comm_key.h"
 
 int main(void) {
   SYSCFG_DL_init();
