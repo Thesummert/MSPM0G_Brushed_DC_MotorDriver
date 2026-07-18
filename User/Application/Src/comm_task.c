@@ -52,6 +52,7 @@ static void CommTask_KeySetLed(CommTask_t *self, _Bool on);
 static void CommTask_KeySetLedStart(CommTask_t *self);
 static void CommTask_KeySetLedShow(CommTask_t *self);
 static void CommTask_KeySetSave(CommTask_t *self);
+static void CommTask_KeyShowIDStart(CommTask_t *self);
 static void CommTaskWDT_Callback(void *item);
 
 /**
@@ -643,6 +644,27 @@ static void CommTask_KeySetSave(CommTask_t *self) {
 }
 
 /**
+ * @brief 单击按键后显示当前从机 ID 偏移数量。
+ * @param self 通信任务对象指针。
+ */
+static void CommTask_KeyShowIDStart(CommTask_t *self) {
+  uint16_t id_offset = 0;
+  if (self->manager.stroage.storge.slave_id > MOTOR_MODULE_DEFAULT_ID) {
+    id_offset = self->manager.stroage.storge.slave_id - MOTOR_MODULE_DEFAULT_ID;
+  }
+
+  if (id_offset == 0 || id_offset >= 20) {
+    id_offset = 1;
+  }
+
+  self->key_set_pending = true;
+  self->key_set_status = KEY_IDLE;
+  self->key_set_touch_time = (uint8_t)id_offset;
+  self->key_set_timer = self->time_line + KEY_SET_CONFIRM_TIME;
+  CommTask_KeySetLedStart(self);
+}
+
+/**
  * @brief 软件看门狗超时回调，用于标记通信离线并触发离线闪烁。
  * @param item 回调参数，当前未使用。
  */
@@ -670,6 +692,9 @@ static void CommTask_KEY(CommTask_t *self) {
     switch (key_status) {
 
     case KEY_IDLE:
+      if (key_touch_time == 1) {
+        CommTask_KeyShowIDStart(self);
+      }
       break;
     case KEY_SETTING_SLAVE_ID:
       if (key_touch_time > 0 && key_touch_time < 20) {
@@ -693,6 +718,12 @@ static void CommTask_KEY(CommTask_t *self) {
       break;
     }
   } else if (self->key_set_pending && self->time_line >= self->key_set_timer) {
-    CommTask_KeySetSave(self);
+    if (self->key_set_status == KEY_IDLE) {
+      self->key_set_pending = false;
+      self->status_led->Set(self->status_led, EF_COMM_LED_TWINKLE, 5,
+                            self->time_line);
+    } else {
+      CommTask_KeySetSave(self);
+    }
   }
 }

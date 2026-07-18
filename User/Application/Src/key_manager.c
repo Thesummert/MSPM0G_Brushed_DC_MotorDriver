@@ -43,6 +43,10 @@ _Bool Scan(KeyManager_t *self, uint64_t delta_time) {
         // 长按进入设定从机ID 短按三次进入设定主机ID
         if (output == EF_COMM_TOUCH_HOLD) {
           self->status = KEY_SETTING_SLAVE_ID;
+        } else if (output == EF_COMM_TOUCH_TIMES && touch_time == 1) {
+          self->output_times = touch_time;
+          self->has_answer = true;
+          self->output_status = KEY_IDLE;
         } else if (output == EF_COMM_TOUCH_TIMES && touch_time == 3) {
           self->status = KEY_SETTING_MASTER_ID;
         }
