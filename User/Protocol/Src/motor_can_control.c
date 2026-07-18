@@ -28,7 +28,7 @@ static void S2MEncoder(MotorCan_Slave2Master_t *self, uint8_t status,
   // 所以不判断空指针
   uint8_t direction = (speed < 0.0f) ? true : false;
   self->feedback.cmd.status = status | (direction << 7);
-  self->feedback.cmd.value = (uint16_t)(speed * 100.0f);
+  self->feedback.cmd.value = (uint16_t)(speed * 10000.0f);
 }
 
 #endif
