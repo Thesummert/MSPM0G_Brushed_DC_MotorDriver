@@ -138,6 +138,7 @@ void UART_0_INST_IRQHandler(void) {
     break;
   case DL_UART_IIDX_RX_TIMEOUT_ERROR:
     CallbackRunner(&uart_it_group, UART0_IDLE_RX_CALLBACK, NULL);
+    break;
   default:
     break;
   }

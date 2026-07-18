@@ -8,3 +8,5 @@
 /**/.vscode
 /**/.exe
 
+# 排除python缓存
+/**/__pycache__

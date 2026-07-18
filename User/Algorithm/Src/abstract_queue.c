@@ -92,7 +92,7 @@ static _Bool Drop(EF_Algorithm_Queue_t *self, void *data) {
     }
     self->length--;
     self->pointer_index++;
-    if (++self->pointer_index >= self->queue_size) {
+    if (self->pointer_index >= self->queue_size) {
         self->pointer_index = 0;
     }
 

@@ -94,7 +94,8 @@ void CommTask() {
 /**
  * @brief 初始化通信任务所需的外设、协议编解码器和运行参数。
  *
- * 该函数会恢复 EEPROM 中保存的模块配置；若读取失败，则使用默认主从机 ID 和默认通信频率。
+ * 该函数会恢复 EEPROM 中保存的模块配置；若读取失败，则使用默认主从机 ID
+ * 和默认通信频率。
  */
 void CommTask_Init() {
   memset(&comm_task, 0, sizeof(CommTask_t));
@@ -108,6 +109,11 @@ void CommTask_Init() {
   MotorManager_Init(&comm_task.manager, EFDevice_Get_EEPROM());
   MotorUartSlave_Init(&comm_task.uart_message);
   EF_App_KeyManager_Init(&comm_task.key_manager, EFDevice_Get_Key());
+
+  EF_Usart_Typedef *uart0 = comm_task.euart;
+  uart0->ReceiveDMA_IDLE(uart0, NULL,
+                         UART_TX_DMA_BUFFER_SIZE + 2); // 开启DMA串口接受
+
   // 设定的时候保持常量
   comm_task.status_led->Set(comm_task.status_led, EF_COMM_LED_ALWAYS_ON, 0, 0);
   comm_task.status_led->Show(comm_task.status_led, 1);
@@ -299,69 +305,50 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
   /*串口数据解码*/
   if (self->uart_queue.length > 0) {
     // 如果队列里面有数据 则解码数据
+    uint8_t frame[UART_RX_DMA_BUFFER_SIZE + 2];
+    self->uart_queue.Drop(&self->uart_queue, frame);
     uint16_t master_id;
     uint16_t slave_id;
     uint8_t cmd;
     uint16_t data_len;
     uint8_t data_out[UART_TX_DMA_BUFFER_SIZE];
+    uint16_t message_len =
+        ((uint16_t)frame[self->uart_queue.item_size - 2] << 8) |
+        frame[self->uart_queue.item_size - 1];
 
-    // 直接读取缓冲区 加快处理速度
-    MotorUartSlave_Decode(
-        self->uart_queue.buffer_ptr +
-            self->uart_queue.pointer_index * self->uart_queue.item_size,
-        &master_id, &slave_id, &cmd, &data_len, data_out,
-        self->uart_queue.pointer_index * self->uart_queue.item_size +
-            UART_TX_DMA_BUFFER_SIZE + 2);
-    self->uart_queue.Drop(&self->uart_queue, NULL);
-    // 只处理本机数据
-    // @TODO 只有在ID相同的时候才进行Decode处理
-    if (slave_id == self->manager.stroage.storge.slave_id) {
-      comm_task_dwt.Feed(&comm_task_dwt);
-      switch (cmd) {
+    if (!MotorUartSlave_Decode(frame, &master_id, &slave_id, &cmd, &data_len,
+                               data_out, message_len)) {
+      self->uart_queue.Drop(&self->uart_queue, NULL);
+      return;
+    }
+    comm_task_dwt.Feed(&comm_task_dwt);
+    switch (cmd) {
 
-      case MOTOR_CMD_SET:
-        /*将电机模块切换到设定模式*/
-        self->set_value_mode = true; // 切换到进入设定数值模式
+    case MOTOR_CMD_SET:
+      /*将电机模块切换到设定模式*/
+      self->set_value_mode = true; // 切换到进入设定数值模式
 
-        break;
-      case MOTOR_CMD_DRIVE:
-        /*电机驱动命令 设定电机驱动数值*/
+      break;
+    case MOTOR_CMD_DRIVE:
+      /*电机驱动命令 设定电机驱动数值*/
+      // 只有在ID相同的时候才进行Decode处理
+      if (slave_id == self->manager.stroage.storge.slave_id) {
         CommTask_Uart_SetSpeed(data_out, data_len);
+      }
+      break;
+    case MOTOR_CMD_TRANSMIT:
+      /*数据传输命令 搭配MOTOR_CMD_SET进行数值设定传输*/
+      if (self->set_value_mode == false) {
         break;
-      case MOTOR_CMD_TRANSMIT:
-        /*数据传输命令 搭配MOTOR_CMD_SET进行数值设定传输*/
-        if (self->set_value_mode == false) {
-          break;
-        }
-        if (Verify_CRC16_Check_Sum(data_out, data_len)) {
-          // 如果校验通过 则拷贝数据到管理器中 并且写入到EEPROM中
-          memcpy(self->manager.stroage.datas, data_out, data_len);
-          self->uart_message.Encode(
-              &self->uart_message, self->manager.stroage.storge.master_id,
-              self->manager.stroage.storge.slave_id, MOTOR_CMD_ACK, NULL, 0);
-          if (!self->manager.Write(&self->manager)) {
-            // 发送失败消息
-            self->uart_message.Encode(
-                &self->uart_message, self->manager.stroage.storge.master_id,
-                self->manager.stroage.storge.slave_id, MOTOR_CMD_FAIL, NULL, 0);
-            self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
-                                     self->uart_message.send_len);
-            self->set_value_mode = false;
-          }
-
-          // 串口数据发送
-          uint16_t try_time = 0;
-          while (
-              (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
-                                         self->uart_message.send_len)) &&
-              try_time < 10) {
-            // 尝试10次设定发送
-            try_time++;
-          }
-          // 成功后将直接进行单片机重启
-          // 如果最后确认成功没有发送成功 无需在意
-          NVIC_SystemReset();
-        } else {
+      }
+      if (Verify_CRC16_Check_Sum(data_out, data_len)) {
+        // 如果校验通过 则拷贝数据到管理器中 并且写入到EEPROM中
+        memcpy(self->manager.stroage.datas, data_out, data_len);
+        self->uart_message.Encode(
+            &self->uart_message, self->manager.stroage.storge.master_id,
+            self->manager.stroage.storge.slave_id, MOTOR_CMD_ACK, NULL, 0);
+        if (!self->manager.Write(&self->manager)) {
+          // 发送失败消息
           self->uart_message.Encode(
               &self->uart_message, self->manager.stroage.storge.master_id,
               self->manager.stroage.storge.slave_id, MOTOR_CMD_FAIL, NULL, 0);
@@ -370,28 +357,48 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
           self->set_value_mode = false;
         }
 
-      // case MOTOR_CMD_FEEDBACK:
-      //     /*反馈报文 电机模块不会接收到这个命令*/
-      case MOTOR_CMD_ACK:
-        /*回复报文 当电机设定数值成功的时候会主动发送*/
-        /*同时也是主机检测从机是否在线的时候发送的报文*/
-        // 只发送回复报文 不带其他数据
+        // 串口数据发送
+        // uint16_t try_time = 0;
+        // while (
+        //     (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+        //                                self->uart_message.send_len)) &&
+        //     try_time < 10) {
+        //   // 尝试10次设定发送
+        //   try_time++;
+        // }
+        // 成功后将直接进行单片机重启
+        // 如果最后确认成功没有发送成功 无需在意
+        NVIC_SystemReset();
+      } else {
         self->uart_message.Encode(
             &self->uart_message, self->manager.stroage.storge.master_id,
-            self->manager.stroage.storge.slave_id, MOTOR_CMD_ACK, NULL, 0);
-
-        // 串口数据发送
-        uint16_t try_time = 0;
-        while (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
-                                         self->uart_message.send_len) &&
-               try_time < 10) {
-          // 尝试10次设定发送
-          try_time++;
-        }
-        break;
-      default:
-        break;
+            self->manager.stroage.storge.slave_id, MOTOR_CMD_FAIL, NULL, 0);
+        self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                                 self->uart_message.send_len);
+        self->set_value_mode = false;
       }
+
+    // case MOTOR_CMD_FEEDBACK:
+    //     /*反馈报文 电机模块不会接收到这个命令*/
+    case MOTOR_CMD_ACK:
+      /*回复报文 当电机设定数值成功的时候会主动发送*/
+      /*同时也是主机检测从机是否在线的时候发送的报文*/
+      // 只发送回复报文 不带其他数据
+      self->uart_message.Encode(
+          &self->uart_message, self->manager.stroage.storge.master_id,
+          self->manager.stroage.storge.slave_id, MOTOR_CMD_ACK, NULL, 0);
+
+      // 串口数据发送
+      uint16_t try_time = 0;
+      while (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+                                       self->uart_message.send_len) &&
+             try_time < 10) {
+        // 尝试10次设定发送
+        try_time++;
+      }
+      break;
+    default:
+      break;
     }
   }
 }
@@ -504,15 +511,31 @@ void CommTask_UartRXCallback(void *param) {
       uart0->mspm0g.dma.rx_size_set -
       dma->mspm0g.dma->DMACHAN[dma->mspm0g.channel].DMASZ;
 
-  DL_UART_clearInterruptStatus(uart0->mspm0g.uart,
-                               DL_UART_IIDX_RX_TIMEOUT_ERROR); // 清除标志位
-  // 添加到队列中 并且添加数据长度
+  while (!DL_UART_isRXFIFOEmpty(uart0->mspm0g.uart) &&
+         uart0->mspm0g.it.rx_idle.rec_size <
+             (uart0->mspm0g.dma.rx_size_set - 2)) {
+    uart0->mspm0g.dma.rx_buffer_ptr[uart0->mspm0g.it.rx_idle.rec_size] =
+        DL_UART_receiveData(uart0->mspm0g.uart);
+    uart0->mspm0g.it.rx_idle.rec_size++;
+  }
+
+  DL_UART_clearInterruptStatus(
+      uart0->mspm0g.uart,
+      DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR); // 清除标志位
+
+  if (uart0->mspm0g.it.rx_idle.rec_size < 9) {
+    uart0->ReceiveDMA_IDLE(uart0, uart0->mspm0g.dma.rx_buffer_ptr,
+                           uart0->mspm0g.dma.rx_size_set);
+    return;
+  }
+
+  // 先把长度写入当前DMA接收帧末尾，再入队
+  uart0->mspm0g.dma.rx_buffer_ptr[uart0->mspm0g.dma.rx_size_set - 2] =
+      uart0->mspm0g.it.rx_idle.rec_size >> 8;
+  uart0->mspm0g.dma.rx_buffer_ptr[uart0->mspm0g.dma.rx_size_set - 1] =
+      uart0->mspm0g.it.rx_idle.rec_size & 0xFF;
   comm_task.uart_queue.Add(&comm_task.uart_queue,
                            uart0->mspm0g.dma.rx_buffer_ptr);
-  comm_task.uart_queue.buffer_ptr[UART_RX_DMA_BUFFER_SIZE - 2] =
-      uart0->mspm0g.it.rx_idle.rec_size >> 8;
-  comm_task.uart_queue.buffer_ptr[UART_RX_DMA_BUFFER_SIZE - 1] =
-      uart0->mspm0g.it.rx_idle.rec_size & 0xFF;
 
   uart0->ReceiveDMA_IDLE(uart0, uart0->mspm0g.dma.rx_buffer_ptr,
                          uart0->mspm0g.dma.rx_size_set); // 默认再次开启DMA
@@ -648,7 +671,7 @@ static void CommTask_KEY(CommTask_t *self) {
 
     case KEY_IDLE:
       break;
-        case KEY_SETTING_SLAVE_ID:
+    case KEY_SETTING_SLAVE_ID:
       if (key_touch_time > 0 && key_touch_time < 20) {
         self->key_set_pending = true;
         self->key_set_status = key_status;

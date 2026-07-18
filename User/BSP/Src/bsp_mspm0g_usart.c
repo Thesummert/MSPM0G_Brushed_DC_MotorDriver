@@ -188,7 +188,7 @@ _Bool EF_BSP_Uart_Init_IDLE_IT(EF_Usart_Typedef *self, EF_IT_e type,
                       UART0_IDLE_RX_CALLBACK, Callback)) {
     return false;
   }
-  if (EF_BSP_IT_Group_Add(temp_group, &self->mspm0g.it.rx_idle.rx_idle_it)) {
+  if (!EF_BSP_IT_Group_Add(temp_group, &self->mspm0g.it.rx_idle.rx_idle_it)) {
     return false;
   }
   return true;
@@ -501,7 +501,7 @@ static _Bool ReceiveDMA_IDLE(EF_Usart_Typedef *self, uint8_t *buff,
     return false;
   }
   DL_UART_enableInterrupt(self->mspm0g.uart,
-                          DL_UART_MAIN_IIDX_RX_TIMEOUT_ERROR); // 启用空闲中断
+                          DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR); // 启用空闲中断
   // self->mspm0g.dma.rx_dma.EnableFullIRQ(
   //     &self->mspm0g.dma.rx_dma); // 启用DMA中断
   // DL_UART_enableInterrupt(uart0.mspm0g.uart,
@@ -696,6 +696,7 @@ void EF_BSP_Uart0_IDLE_RxCallback(void *param) {
       dma->mspm0g.dma->DMACHAN[dma->mspm0g.channel].DMASZ;
   DL_UART_clearInterruptStatus(uart0.mspm0g.uart,
                                DL_UART_IIDX_RX_TIMEOUT_ERROR); // 清除标志位
+  uart0.mspm0g.dma.rx_dma.ClearIRQ(&uart0.mspm0g.dma.rx_dma);
   uart0.ReceiveDMA_IDLE(&uart0, uart0.mspm0g.dma.rx_buffer_ptr,
-                        uart0.mspm0g.dma.rx_size_set); // 默认再次开启DMA
+                         uart0.mspm0g.dma.rx_size_set); // 默认再次开启DMA
 }

@@ -52,7 +52,7 @@ _Bool EasyFrameDevice_Init() {
   EF_BSP_Uart_InitNormalDMA(&uart, DMA, DMA_CH1_CHAN_ID, DMA_CH0_CHAN_ID,
                             UART_0_DMA_RX_Callback, UART_0_DMA_TX_Callback,
                             EF_BSP_Uart0_DMA_RxCallback,
-                            EF_BSP_Uart0_DMA_RxCallback, DMA_INT_IRQn, 2);
+                            EF_BSP_Uart0_DMA_TxCallback, DMA_INT_IRQn, 2);
   EF_BSP_Uart_Init_IDLE_IT(
       &uart, UART0_IDLE_RX_CALLBACK,
       CommTask_UartRXCallback); // 此处使用通信任务设计的回调函数

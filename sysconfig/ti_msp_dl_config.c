@@ -442,7 +442,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_I2C_0_init(void) {
 
 static const DL_UART_Main_ClockConfig gUART_0ClockConfig = {
     .clockSel    = DL_UART_MAIN_CLOCK_BUSCLK,
-    .divideRatio = DL_UART_MAIN_CLOCK_DIVIDE_RATIO_1
+    .divideRatio = DL_UART_MAIN_CLOCK_DIVIDE_RATIO_4
 };
 
 static const DL_UART_Main_Config gUART_0Config = {
@@ -462,11 +462,17 @@ SYSCONFIG_WEAK void SYSCFG_DL_UART_0_init(void)
     /*
      * Configure baud rate by setting oversampling and baud rate divisors.
      *  Target baud rate: 115200
-     *  Actual baud rate: 115190.78
+     *  Actual baud rate: 115273.78
      */
     DL_UART_Main_setOversampling(UART_0_INST, DL_UART_OVERSAMPLING_RATE_16X);
-    DL_UART_Main_setBaudRateDivisor(UART_0_INST, UART_0_IBRD_40_MHZ_115200_BAUD, UART_0_FBRD_40_MHZ_115200_BAUD);
+    DL_UART_Main_setBaudRateDivisor(UART_0_INST, UART_0_IBRD_10_MHZ_115200_BAUD, UART_0_FBRD_10_MHZ_115200_BAUD);
 
+
+    /* Configure Interrupts */
+    DL_UART_Main_enableInterrupt(UART_0_INST,
+                                 DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR);
+    /* Setting the Interrupt Priority */
+    NVIC_SetPriority(UART_0_INST_INT_IRQN, 2);
 
     /* Configure DMA Receive Event */
     DL_UART_Main_enableDMAReceiveEvent(UART_0_INST, DL_UART_DMA_INTERRUPT_RX);
@@ -474,8 +480,10 @@ SYSCONFIG_WEAK void SYSCFG_DL_UART_0_init(void)
     DL_UART_Main_enableDMATransmitEvent(UART_0_INST);
     /* Configure FIFOs */
     DL_UART_Main_enableFIFOs(UART_0_INST);
-    DL_UART_Main_setRXFIFOThreshold(UART_0_INST, DL_UART_RX_FIFO_LEVEL_ONE_ENTRY);
+    DL_UART_Main_setRXFIFOThreshold(UART_0_INST, DL_UART_RX_FIFO_LEVEL_FULL);
     DL_UART_Main_setTXFIFOThreshold(UART_0_INST, DL_UART_TX_FIFO_LEVEL_1_4_EMPTY);
+
+    DL_UART_Main_setRXInterruptTimeout(UART_0_INST, 15);
 
     DL_UART_Main_enable(UART_0_INST);
 }

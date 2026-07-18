@@ -65,6 +65,8 @@ static _Bool Set(EF_DMA_Typedef *self, uint8_t *src_ptr, uint8_t *target_ptr,
     RTT_Print(0, "DMA not inited \r\n");
     return false;
   }
+  DL_DMA_disableChannel(self->mspm0g.dma, self->mspm0g.channel);
+  self->ClearIRQ(self);
   DL_DMA_setSrcAddr(self->mspm0g.dma, self->mspm0g.channel, (uint32_t)src_ptr);
   DL_DMA_setDestAddr(self->mspm0g.dma, self->mspm0g.channel,
                      (uint32_t)target_ptr);
