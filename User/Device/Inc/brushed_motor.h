@@ -25,6 +25,7 @@ typedef struct EF_BrushedMotor_t {
   _Bool break_flag;                      // 刹车标志
   float omega_rotor;                     // 转子角速度
   float omega_output;                    // 输出轴角速度
+  _Bool is_reverse;                      // 是否反向
 
   _Bool (*SetOutput)(struct EF_BrushedMotor_t *self, float value);
   _Bool (*Break)(struct EF_BrushedMotor_t *self);

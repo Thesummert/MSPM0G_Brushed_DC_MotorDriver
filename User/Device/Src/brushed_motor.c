@@ -179,7 +179,6 @@ static _Bool Start(EF_BrushedMotor_t *self) {
   self->pwm->StartPWM(self->pwm);
   self->qei->Start(self->qei);
 
-
   return true;
 }
 
@@ -225,6 +224,10 @@ static _Bool GetSpeed(EF_BrushedMotor_t *self, float dt, float *omega_rotor,
   if (!self->qei->getSpeed(self->qei, dt, &self->omega_rotor,
                            &self->omega_output)) {
     return false;
+  }
+  if (self->is_reverse == true) {
+    self->omega_rotor *= -1.0f;
+    self->omega_output *= -1.0f;
   }
 
   if (omega_rotor != NULL) {

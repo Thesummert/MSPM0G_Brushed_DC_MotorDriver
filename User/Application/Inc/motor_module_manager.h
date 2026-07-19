@@ -43,6 +43,7 @@ typedef struct {
   float radio;
   uint8_t multiplier;
   uint32_t ppr;
+  _Bool is_reverse; // 是否反向
   // 回报率
   uint8_t freq;
   // CRC

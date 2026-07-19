@@ -181,6 +181,7 @@ void CommTask_Init() {
     };
     PIDInit(pid, &pid_init);
     // 设定电机参数
+    runner->motor->is_reverse = comm_task.manager.stroage.storge.is_reverse;
     runner->motor->qei->radio = comm_task.manager.stroage.storge.radio;
     runner->motor->qei->multiplier =
         comm_task.manager.stroage.storge.multiplier;
@@ -361,7 +362,8 @@ static void CommTask_Uart_SetValue(CommTask_t *self) {
         // 串口数据发送
         // uint16_t try_time = 0;
         // while (
-        //     (!self->euart->TransmitDMA(self->euart, self->uart_message.buffer,
+        //     (!self->euart->TransmitDMA(self->euart,
+        //     self->uart_message.buffer,
         //                                self->uart_message.send_len)) &&
         //     try_time < 10) {
         //   // 尝试10次设定发送
@@ -645,7 +647,8 @@ static void CommTask_KeySetSave(CommTask_t *self) {
 
 /**
  * @brief 单击按键后显示当前从机 ID 偏移数量。
- * @param self 通信任务对象指针。
+ * @param self
+ * 通信任务对象指针。
  */
 static void CommTask_KeyShowIDStart(CommTask_t *self) {
   uint16_t id_offset = 0;

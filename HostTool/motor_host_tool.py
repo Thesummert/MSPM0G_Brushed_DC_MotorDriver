@@ -111,7 +111,7 @@ def build_storage_payload(values: dict[str, str]) -> bytes:
     """Pack the EEPROM storage layout used by the firmware."""
 
     body = struct.pack(
-        "<HHffffffffBIB",
+        "<HHffffffffBIBB",
         int(values["slave_id"], 0),
         int(values["master_id"], 0),
         float(values["kp"]),
@@ -124,6 +124,7 @@ def build_storage_payload(values: dict[str, str]) -> bytes:
         float(values["radio"]),
         int(values["multiplier"], 0) & 0xFF,
         int(values["ppr"], 0) & 0xFFFFFFFF,
+        int(values["is_reverse"], 0) & 0xFF,
         int(values["freq"], 0) & 0xFF,
     )
     crc = crc16_firmware(body)
@@ -185,6 +186,7 @@ class MotorHostTool(tk.Tk):
             "radio": tk.StringVar(value="30.0"),
             "multiplier": tk.StringVar(value="4"),
             "ppr": tk.StringVar(value="100"),
+            "is_reverse": tk.StringVar(value="0"),
             "freq": tk.StringVar(value="1"),
         }
 
@@ -201,6 +203,7 @@ class MotorHostTool(tk.Tk):
             ("radio", "Radio"),
             ("multiplier", "Multiplier"),
             ("ppr", "PPR"),
+            ("is_reverse", "IsReverse"),
             ("freq", "Freq"),
         ]
 
@@ -308,6 +311,7 @@ class MotorHostTool(tk.Tk):
         int(values["slave_id"], 0)
         int(values["multiplier"], 0)
         int(values["ppr"], 0)
+        int(values["is_reverse"], 0)
         int(values["freq"], 0)
         for key in ["kp", "ki", "kd", "maxout", "integral_limit", "deadband", "lpf", "radio"]:
             float(values[key])
