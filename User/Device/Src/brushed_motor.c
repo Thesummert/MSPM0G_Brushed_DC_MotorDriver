@@ -120,7 +120,7 @@ static _Bool SetOutput(EF_BrushedMotor_t *self, float value) {
     } else {
       self->pwm->SetPWM(self->pwm, 0, 0);
       self->pwm->SetPWM(self->pwm, 1, -value);
-    }
+        }
     break;
   case BRUSHED_MOTOR_TYPE2:
     break;

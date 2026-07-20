@@ -160,7 +160,11 @@ static _Bool TransmitFIFO(EF_BSP_CAN_t *self, uint32_t id, uint8_t *data,
     }
     dlc = index;
   }
-  tx_msg.id = id;
+  if (is_ext_id) {
+    tx_msg.id = id;
+  } else {
+    tx_msg.id = (id << 18) & (uint32_t)0x1FFC0000;
+  }
   tx_msg.rtr = 0;   // 发送数据帧
   tx_msg.dlc = dlc; // 设定发送长度
   tx_msg.xtd = is_ext_id;

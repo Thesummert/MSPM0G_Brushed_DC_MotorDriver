@@ -21,10 +21,15 @@
 static MotorTask_t motor_task;
 static void MotorTask_Run();
 
+// 测试用参数
+// _Bool test_flag = 0;
+// float set_speed = 0.0f;
+
 /**
  * @brief 电机任务主循环。
  *
- * 该任务以 1KHz 运行，持续驱动电机状态机和 PID 控制。
+ * 该任务以 1KHz 运行，持续驱动电机状态机和
+ * PID 控制。
  */
 void MotorTask() {
   /*任务以1KHZ运行*/
@@ -54,13 +59,14 @@ void MotorTask_Init() {
   BrushedMotorRunner_Init(&motor_task.motor, EFDevice_Get_Motor(), &pid_init,
                           0.7f);
   motor_task.time_line = EasyFrameSysTime_GetTimeline_s();
-
 }
 
 /**
  * @brief 执行一次电机控制状态更新。
  *
+ *
  * 根据当前电机状态切换空闲、运行和刹车逻辑，并更新运行时长。
+
  */
 static void MotorTask_Run() {
   BrushedMotorRunner_t *motor = &motor_task.motor;
@@ -95,22 +101,38 @@ static void MotorTask_Run() {
     }
     break;
   }
+  //
+  // if (test_flag == 1) {
+  //   if (motor_task.is_running == false) {
+  //     motor->Start(motor);
+  //     motor_task.is_running = true;
+  //   } else {
+  //     motor->Run(motor, set_speed, motor_task.dt);
+  //   }
+  // }
+  // else {
+  //     motor_task.is_running = false;
+  //     motor->Stop(motor);
+  // }
 }
 
 /**
  * @brief 获取电机 PID 实例指针。
  * @return 电机 PID 实例指针。
+
  */
 PIDInstance *MotorTask_GetPID() { return &motor_task.motor.omega_pid; }
 
 /**
  * @brief 获取电机运行器实例指针。
  * @return 电机运行器实例指针。
+
  */
 BrushedMotorRunner_t *MotorTask_GetRunner() { return &motor_task.motor; }
 
 /**
  * @brief 获取电机任务上下文指针。
  * @return 电机任务上下文指针。
+
  */
 MotorTask_t *MotorTask_GetTask() { return &motor_task; }
