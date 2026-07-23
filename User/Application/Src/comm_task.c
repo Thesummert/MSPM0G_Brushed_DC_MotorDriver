@@ -449,7 +449,7 @@ void CommTask_CAN_Decode(const uint8_t *data, uint8_t data_len) {
       break;
     }
     motor_task->set_omega =
-        direction * ((float)(data[1] << 8 | data[2]) / 10000.0f);
+        direction * ((float)(data[1] << 8 | data[2]) / 100.0f);
   }
 }
 
